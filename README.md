@@ -1,5 +1,7 @@
 # LidarQDevice
 
+2026-10-28 连接显示整理（用户定）：450×200 和 640×128 两页均显示只读“192.168.1.10:57568 ↔ 192.168.1.102:57568”，从 C++ 固定配置读取，不显示 MAC、不增加表单状态。
+
 2026-10-28 用户定：450×200 与 640×128 两个官邸的连接区都只选择网卡，`open(interfaceIndex)` 使用 LidarQConfig 固定参数：本机 `192.168.1.102:57568`，设备 `192.168.1.10:57568`，设备 MAC `00:11:22:33:44:55`。采集卡不回复 ARP，因此显式提供 MAC，Handle 直接组装 UDP；不改共享 Handle 或铭辰的 ARP 路径。QML 不再保存或编辑这五项设置，累积、采集和保存设置不变。
 
 本轮 Windows Qt 6.11.2 Release、两页面 qmllint 及既有 450×200 页面冒烟 1/1 通过，无编译/QML 警告；证据为 `build/build-fixed-connection.log`、`build/test-fixed-connection.log`。未连接实物，不重复 Linux/协议全套，仅本地提交。
@@ -32,3 +34,5 @@ cmake --build build --config Release --target LidarLidarQDevice_qmllint
 MIT，Copyright (c) 2026 周涛（ZHOU TAO）。Qt、libserialport、libpcap/Npcap 等依赖各自授权，MIT 不替代这些许可；详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。本仓库不包含第三方 SDK、运行库或驱动。
 
 CI：托管 Linux 自动验证；Windows 原生依赖使用预装 SDK/运行时的自托管入口，默认跳过不代表通过。本机 Windows 验证记录与主程序分仓记录一起保存。
+
+本轮本机验证（2026-10-28）：Windows Qt 6.11.2 Release 构建、CMake qmllint 和既有页面冒烟 1/1 通过；未连接实物。日志：build/build-connection-summary.log、build/test-connection-summary.log。两页均编译/静态检查，既有运行冒烟实例化 450×200。
