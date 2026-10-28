@@ -74,12 +74,11 @@ inline constexpr int AccumSecMax = 65535;
 inline constexpr double Freq2WsSlope = 1.0; // **占位**：bin → m/s 的斜率，待实测常量回填
 inline constexpr double DBinDist = 1.0;     // **占位**：米/距离门，待实测回填（2D 距离轴 + 风廓线高度都用它）
 
-// ── 网口连接默认值（作为 QML 官邸初值，连接时显式传入）──────────────────────
-// **占位**（用户定：先按国实卡的值写，接机核实后回填）：本卡自己的网口默认值尚未核实。
-inline constexpr auto HostIPv4 = "192.168.0.3";
-inline constexpr int HostPort = 8080;
-inline constexpr auto DeviceIPv4 = "192.168.0.2";
-inline constexpr int DevicePort = 8080;
+// 两种规格共用固定网络参数；设备不回应 ARP，显式 MAC 使 Handle 直接组装 UDP。
+inline constexpr auto HostIPv4 = "192.168.1.102";
+inline constexpr int HostPort = 57568;
+inline constexpr auto DeviceIPv4 = "192.168.1.10";
+inline constexpr int DevicePort = 57568;
 inline constexpr char DeviceMAC[] = "00:11:22:33:44:55";
 
 // ── 绘图显示范围 ────────────────────────────────────────────────────────────

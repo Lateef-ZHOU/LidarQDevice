@@ -27,11 +27,11 @@ public:
         return PcapForm::connectionParameters(LidarQConfig::HostIPv4, LidarQConfig::HostPort,
                                                 LidarQConfig::DeviceIPv4, LidarQConfig::DevicePort, LidarQConfig::DeviceMAC);
     }
-    bool open(const int interfaceIndex, const QString &hostIP, const int hostPort,
-              const QString &deviceIP, const int devicePort, const QString &deviceMAC)
+    bool open(const int interfaceIndex)
     {
-        const auto params = PcapForm::parseParameters(this->device().logSource(), interfaceIndex, hostIP, hostPort, deviceIP, devicePort,
-            deviceMAC, Base::kPcapReadTimeout, Base::kPcapKernelBufferBytes);
+        const auto params = PcapForm::parseParameters(this->device().logSource(), interfaceIndex,
+            LidarQConfig::HostIPv4, LidarQConfig::HostPort, LidarQConfig::DeviceIPv4, LidarQConfig::DevicePort,
+            LidarQConfig::DeviceMAC, Base::kPcapReadTimeout, Base::kPcapKernelBufferBytes);
         return params && this->device().open(*params);
     }
 
@@ -104,9 +104,7 @@ Q_SIGNALS:
     void cnrReady(const QVector<double> &values);
     void profileReady(VerticalWindProfilePtr profile);
 public Q_SLOTS:
-    bool open(const int interfaceIndex, const QString &hostIP, const int hostPort,
-              const QString &deviceIP, const int devicePort, const QString &deviceMAC)
-    { return Base::open(interfaceIndex, hostIP, hostPort, deviceIP, devicePort, deviceMAC); }
+    bool open(const int interfaceIndex) { return Base::open(interfaceIndex); }
     void close() { this->device().close(); }
     bool sendParams(const int accumSec) { return Base::sendParams(accumSec); }
     void startTest(const int accumSec, const bool save, const QUrl &folder)
@@ -153,9 +151,7 @@ Q_SIGNALS:
     void cnrReady(const QVector<double> &values);
     void profileReady(VerticalWindProfilePtr profile);
 public Q_SLOTS:
-    bool open(const int interfaceIndex, const QString &hostIP, const int hostPort,
-              const QString &deviceIP, const int devicePort, const QString &deviceMAC)
-    { return Base::open(interfaceIndex, hostIP, hostPort, deviceIP, devicePort, deviceMAC); }
+    bool open(const int interfaceIndex) { return Base::open(interfaceIndex); }
     void close() { this->device().close(); }
     bool sendParams(const int accumSec) { return Base::sendParams(accumSec); }
     void startTest(const int accumSec, const bool save, const QUrl &folder)

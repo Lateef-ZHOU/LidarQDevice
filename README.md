@@ -1,5 +1,9 @@
 # LidarQDevice
 
+2026-10-28 用户定：450×200 与 640×128 两个官邸的连接区都只选择网卡，`open(interfaceIndex)` 使用 LidarQConfig 固定参数：本机 `192.168.1.102:57568`，设备 `192.168.1.10:57568`，设备 MAC `00:11:22:33:44:55`。采集卡不回复 ARP，因此显式提供 MAC，Handle 直接组装 UDP；不改共享 Handle 或铭辰的 ARP 路径。QML 不再保存或编辑这五项设置，累积、采集和保存设置不变。
+
+本轮 Windows Qt 6.11.2 Release、两页面 qmllint 及既有 450×200 页面冒烟 1/1 通过，无编译/QML 警告；证据为 `build/build-fixed-connection.log`、`build/test-fixed-connection.log`。未连接实物，不重复 Linux/协议全套，仅本地提交。
+
 LiDAR 的独立官邸：具体 C++ 后端、Collector/协议/处理逻辑及其 QML 页面在同一仓库维护。来自 LiDAR_DataACQ master `5cc6d65`，本次分仓不改变运行行为。
 
 ## 边界与接入
