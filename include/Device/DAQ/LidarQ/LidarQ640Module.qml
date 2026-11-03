@@ -20,7 +20,7 @@ ModulePage {
     property int networkInterfaceIndex: internals.connectionParameters.networkInterfaceDefault
     mainPages: [
         Page {
-            title: qsTr("功率谱 3D")
+            title: qsTr("功率谱")
             contentItem: SurfaceView {
                 id: surface
                 specification: internals.chartParameters.plotConfiguration
@@ -31,7 +31,7 @@ ModulePage {
             }
         },
         Page {
-            title: qsTr("风速 | CNR")
+            title: qsTr("径向风")
             contentItem: Wind2DView {
                 id: wind
                 specification: internals.chartParameters.plotConfiguration
@@ -43,7 +43,7 @@ ModulePage {
             }
         },
         Page {
-            title: qsTr("风羽图")
+            title: qsTr("风廓线")
             contentItem: WindBarbItem {
                 id: barb
                 readonly property var spec: internals.chartParameters.plotConfiguration
