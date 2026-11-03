@@ -23,7 +23,6 @@ class LidarQ450x200Core final : public Device<PcapHandle, LidarQCollector<LidarQ
     Q_OBJECT
     Q_PROPERTY(QString displayName READ displayName CONSTANT)
     Q_PROPERTY(QString subtitle READ subtitle CONSTANT)
-    Q_PROPERTY(QObject *logSource READ logSourceObject CONSTANT)
     Q_PROPERTY(bool isOpen READ isOpen)
     Q_PROPERTY(bool isLocked READ isLocked)
     Q_PROPERTY(QString holder READ holder)
@@ -42,7 +41,6 @@ class LidarQ640x128Core final : public Device<PcapHandle, LidarQCollector<LidarQ
     Q_OBJECT
     Q_PROPERTY(QString displayName READ displayName CONSTANT)
     Q_PROPERTY(QString subtitle READ subtitle CONSTANT)
-    Q_PROPERTY(QObject *logSource READ logSourceObject CONSTANT)
     Q_PROPERTY(bool isOpen READ isOpen)
     Q_PROPERTY(bool isLocked READ isLocked)
     Q_PROPERTY(QString holder READ holder)
@@ -66,7 +64,7 @@ public:
     }
     bool open(const int interfaceIndex)
     {
-        const auto params = PcapForm::parseParameters(this->device().logSource(), interfaceIndex,
+        const auto params = PcapForm::parseParameters(this->device(), interfaceIndex,
             LidarQConfig::HostIPv4, LidarQConfig::HostPort, LidarQConfig::DeviceIPv4, LidarQConfig::DevicePort,
             LidarQConfig::DeviceMAC, Base::kPcapReadTimeout, Base::kPcapKernelBufferBytes);
         return params && this->device().open(*params);

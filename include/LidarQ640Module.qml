@@ -100,7 +100,7 @@ ModulePage {
         readonly property LidarQ640x128Device device: root.LidarQ640x128Device
     }
     Connections {
-        target: internals.device.device.logSource
+        target: internals.device.device
         function onLogMessage(text): void { root.logMessage(text) }
     }
 }
