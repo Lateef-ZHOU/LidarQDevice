@@ -1,19 +1,19 @@
 #pragma once
-#include "Device/DAQ/LidarQ/LidarQProcessing.h"
+#include "LidarQProcessing.h"
 #include <QDateTime>
 #include <QtQml/qqmlregistration.h>
-#include "UI/Chart/DAQChartSpecification.h"
-#include "Acquisition/AcqSaver.h"
-#include "Algorithm/Wind/VerticalWindProfile.h"
+#include "DAQChartSpecification.h"
+#include "AcqSaver.h"
+#include "VerticalWindProfile.h"
 #include <memory>
 #include <QByteArray>
 #include <QString>
 #include <QUrl>
 #include <QVariantMap>
 
-#include "Device/DAQ/DAQDevice.h"                  // 采集卡族两层（族基 DAQDeviceBase + 族层 DAQDevice）
-#include "Device/PcapForm.h"
-#include "Device/DAQ/LidarQ/LidarQRunSide.h"    // 运行侧：帧头布局 + 规格预设 + 收集器
+#include "DAQDevice.h"                  // 采集卡族两层（族基 DAQDeviceBase + 族层 DAQDevice）
+#include "PcapForm.h"
+#include "LidarQRunSide.h"    // 运行侧：帧头布局 + 规格预设 + 收集器
 
 // 国耀两种规格共用模板流程；Qt 属性与信号由非模板末端类声明。
 // 规格贯穿 Collector、处理工厂和设备类型，任务侧继续使用 DAQDeviceBase 组合。

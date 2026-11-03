@@ -8,7 +8,7 @@
 #include <QtEndian> // qFromBigEndian（帧号/包序字段解析）
 #include <QtGlobal> // quint8/quint16（帧头字段）
 
-#include "Device/DAQ/DAQCollector.h" // DAQCollector（族收集器基）
+#include "DAQCollector.h" // DAQCollector（族收集器基）
 
 // ============================================================
 // LidarQRunSide.h — 国耀采集卡型号夹的**运行侧**：协议常量 + 形状值类 + 收集器。

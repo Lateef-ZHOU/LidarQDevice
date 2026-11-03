@@ -3,10 +3,10 @@
 #include <memory>
 #include <QString>
 #include <QVector>
-#include "Algorithm/Wind/RadialWind.h"
-#include "Algorithm/Wind/WindProfile.h"
-#include "Acquisition/AcqSaver.h"
-#include "Device/DAQ/LidarQ/LidarQRunSide.h"
+#include "RadialWind.h"
+#include "WindProfile.h"
+#include "AcqSaver.h"
+#include "LidarQRunSide.h"
 
 // 型号帧处理工厂；Emitter 只提供结果信号，不向其读取或写入业务成员。
 // 每条处理线程只创建一份；四束环及写位置仅由该闭包维护。
