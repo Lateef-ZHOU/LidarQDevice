@@ -62,8 +62,7 @@ class LidarQDevice : public DAQDevice<Core>
 public:
     [[nodiscard]] QVariantMap connectionParameters() const
     {
-        return PcapForm::connectionParameters(LidarQConfig::HostIPv4, LidarQConfig::HostPort,
-                                                LidarQConfig::DeviceIPv4, LidarQConfig::DevicePort, LidarQConfig::DeviceMAC);
+        return PcapForm::connectionParameters();
     }
     bool open(const int interfaceIndex)
     {
