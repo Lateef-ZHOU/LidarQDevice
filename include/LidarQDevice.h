@@ -21,11 +21,10 @@
 class LidarQ450x200Core final : public Device<PcapHandle, LidarQCollector<LidarQGeometry::Geo450x200>>
 {
     Q_OBJECT
-    Q_PROPERTY(QString displayName READ displayName CONSTANT)
-    Q_PROPERTY(QString subtitle READ subtitle CONSTANT)
+    Q_PROPERTY(QString displayName MEMBER displayName CONSTANT)
+    Q_PROPERTY(QString subtitle MEMBER subtitle CONSTANT)
     Q_PROPERTY(bool isOpen READ isOpen)
-    Q_PROPERTY(bool isLocked READ isLocked)
-    Q_PROPERTY(QString holder READ holder)
+    Q_PROPERTY(QVariant holder READ qmlHolder)
 public:
     using Device::Device;
     ~LidarQ450x200Core() override { PreDestruction(); }
@@ -39,11 +38,10 @@ private:
 class LidarQ640x128Core final : public Device<PcapHandle, LidarQCollector<LidarQGeometry::Geo640x128>>
 {
     Q_OBJECT
-    Q_PROPERTY(QString displayName READ displayName CONSTANT)
-    Q_PROPERTY(QString subtitle READ subtitle CONSTANT)
+    Q_PROPERTY(QString displayName MEMBER displayName CONSTANT)
+    Q_PROPERTY(QString subtitle MEMBER subtitle CONSTANT)
     Q_PROPERTY(bool isOpen READ isOpen)
-    Q_PROPERTY(bool isLocked READ isLocked)
-    Q_PROPERTY(QString holder READ holder)
+    Q_PROPERTY(QVariant holder READ qmlHolder)
 public:
     using Device::Device;
     ~LidarQ640x128Core() override { PreDestruction(); }
