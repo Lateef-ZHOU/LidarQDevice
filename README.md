@@ -66,3 +66,9 @@ CI：托管 Linux 自动验证；Windows 原生依赖使用预装 SDK/运行时�
 设备名称/副标题由构造传入 DeviceBase 的公开 const 成员，Qt 通过 MEMBER CONSTANT 直接暴露；占用查询只保留 holder，Qt 用无效 QVariant 表示空闲、字符串表示占用，删除 isLocked 属性。既有连接、重连、收发和取消逻辑保持。
 
 本轮仅本地整理；集成验证记录见主程序 docs/maintenance/validation.md，不推送。
+
+## 2026-11-04：进料在消费端取值（用户定）
+
+Collector 的 onFeed 接收 optional<QByteArray> 的 const 引用，由本型号解析端取出字节。空输入由 DeviceCore 公共 feed 拦截；帧号、包序和收齐规则不变。
+
+本轮仅本地整理，不推送；集成验证见主程序维护记录。

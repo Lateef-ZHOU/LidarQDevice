@@ -171,8 +171,9 @@ public:
     // frameId_ 出生态为空，天然判"变了"）即**弃旧启新**：计数归零，本帧从头收起；缓冲不清——
     // 理由与代价见类注。**齐没齐由 settled() 答，本口不答**（皮会再问一次）。
 private: // NVI 可变点：派生只实现、不调用（公开的是基类那张非虚的皮 feed）
-    void onFeed(const QByteArray &raw, const RxTime at) override
+    void onFeed(const std::optional<QByteArray> &item, const RxTime at) override
     {
+        const auto &raw = *item;
         if (raw.size() != geo_.packetSize)
             return; // 长度不对：不认
         if (std::memcmp(raw.constData(), LidarQConfig::HeaderSign, sizeof(LidarQConfig::HeaderSign)) != 0)
