@@ -17,10 +17,48 @@
 
 // 国耀两种规格共用模板流程；Qt 属性与信号由非模板末端类声明。
 // 规格贯穿 Collector、处理工厂和设备类型，任务侧继续使用 DAQDeviceBase 组合。
-template <LidarQGeometry Geometry>
-class LidarQDevice : public DAQDevice<PcapHandle, LidarQCollector<Geometry>>
+// Qt 元对象末端：Handle 与 Device 共用一个 QObject；析构先等上传退出。
+class LidarQ450x200Core final : public Device<PcapHandle, LidarQCollector<LidarQGeometry::Geo450x200>>
 {
-    using Base = DAQDevice<PcapHandle, LidarQCollector<Geometry>>;
+    Q_OBJECT
+    Q_PROPERTY(QString displayName READ displayName CONSTANT)
+    Q_PROPERTY(QString subtitle READ subtitle CONSTANT)
+    Q_PROPERTY(QObject *logSource READ logSourceObject CONSTANT)
+    Q_PROPERTY(bool isOpen READ isOpen)
+    Q_PROPERTY(bool isLocked READ isLocked)
+    Q_PROPERTY(QString holder READ holder)
+public:
+    using Device::Device;
+    ~LidarQ450x200Core() override { PreDestruction(); }
+Q_SIGNALS:
+    void lockChanged(HandleCore::ResourcePhase phase) override;
+private:
+    void PreDestruction() noexcept final { Device::PreDestruction(); }
+};
+
+// Qt 元对象末端：Handle 与 Device 共用一个 QObject；析构先等上传退出。
+class LidarQ640x128Core final : public Device<PcapHandle, LidarQCollector<LidarQGeometry::Geo640x128>>
+{
+    Q_OBJECT
+    Q_PROPERTY(QString displayName READ displayName CONSTANT)
+    Q_PROPERTY(QString subtitle READ subtitle CONSTANT)
+    Q_PROPERTY(QObject *logSource READ logSourceObject CONSTANT)
+    Q_PROPERTY(bool isOpen READ isOpen)
+    Q_PROPERTY(bool isLocked READ isLocked)
+    Q_PROPERTY(QString holder READ holder)
+public:
+    using Device::Device;
+    ~LidarQ640x128Core() override { PreDestruction(); }
+Q_SIGNALS:
+    void lockChanged(HandleCore::ResourcePhase phase) override;
+private:
+    void PreDestruction() noexcept final { Device::PreDestruction(); }
+};
+
+template <LidarQGeometry Geometry, typename Core>
+class LidarQDevice : public DAQDevice<Core>
+{
+    using Base = DAQDevice<Core>;
 public:
     [[nodiscard]] QVariantMap connectionParameters() const
     {
@@ -79,7 +117,7 @@ class LidarQ450x200Device final
 #ifdef Q_MOC_RUN
     : public DAQDeviceBase // 模板层继承的族级元对象。
 #else
-    : public LidarQDevice<LidarQGeometry::Geo450x200>
+    : public LidarQDevice<LidarQGeometry::Geo450x200, LidarQ450x200Core>
 #endif
 {
     Q_OBJECT
@@ -88,7 +126,7 @@ class LidarQ450x200Device final
     QML_ATTACHED(LidarQ450x200Device)
     QML_UNCREATABLE("由对应 QML 官邸创建和拥有")
     Q_PROPERTY(QVariantMap acquisitionParameters READ acquisitionParameters CONSTANT)
-    using Base = LidarQDevice<LidarQGeometry::Geo450x200>;
+    using Base = LidarQDevice<LidarQGeometry::Geo450x200, LidarQ450x200Core>;
 public:
     static LidarQ450x200Device *qmlAttachedProperties(QObject *owner) { return new LidarQ450x200Device(owner); }
     explicit LidarQ450x200Device(QObject *parent)
@@ -126,7 +164,7 @@ class LidarQ640x128Device final
 #ifdef Q_MOC_RUN
     : public DAQDeviceBase // 模板层继承的族级元对象。
 #else
-    : public LidarQDevice<LidarQGeometry::Geo640x128>
+    : public LidarQDevice<LidarQGeometry::Geo640x128, LidarQ640x128Core>
 #endif
 {
     Q_OBJECT
@@ -135,7 +173,7 @@ class LidarQ640x128Device final
     QML_ATTACHED(LidarQ640x128Device)
     QML_UNCREATABLE("由对应 QML 官邸创建和拥有")
     Q_PROPERTY(QVariantMap acquisitionParameters READ acquisitionParameters CONSTANT)
-    using Base = LidarQDevice<LidarQGeometry::Geo640x128>;
+    using Base = LidarQDevice<LidarQGeometry::Geo640x128, LidarQ640x128Core>;
 public:
     static LidarQ640x128Device *qmlAttachedProperties(QObject *owner) { return new LidarQ640x128Device(owner); }
     explicit LidarQ640x128Device(QObject *parent)
