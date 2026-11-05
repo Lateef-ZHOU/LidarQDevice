@@ -26,7 +26,9 @@ ModulePage {
                 specification: internals.chartParameters.plotConfiguration
                 Connections {
                     target: internals.device
-                    function onSpecReady(values) { surface.updateSpectrum(values) }
+                    function onSpecReady(values) {
+                        surface.updateSpectrum(values);
+                    }
                 }
             }
         },
@@ -37,8 +39,12 @@ ModulePage {
                 specification: internals.chartParameters.plotConfiguration
                 Connections {
                     target: internals.device
-                    function onWsReady(values) { wind.updateWS(values) }
-                    function onCnrReady(values) { wind.updateCNR(values) }
+                    function onWsReady(values) {
+                        wind.updateWS(values);
+                    }
+                    function onCnrReady(values) {
+                        wind.updateCNR(values);
+                    }
                 }
             }
         },
@@ -47,36 +53,43 @@ ModulePage {
             contentItem: WindBarbItem {
                 id: barb
                 readonly property var spec: internals.chartParameters.plotConfiguration
-                configuration: ({ heightBins: spec.rows, maxHeight: spec.rows * spec.gateSpacing,
-                    windowSeconds: spec.barbWindow, columnSeconds: spec.barbColumn })
+                configuration: ({
+                        heightBins: spec.rows,
+                        maxHeight: spec.rows * spec.gateSpacing,
+                        windowSeconds: spec.barbWindow,
+                        columnSeconds: spec.barbColumn
+                    })
                 Connections {
                     target: internals.device
-                    function onProfileReady(profile) { barb.appendColumn(profile) }
+                    function onProfileReady(profile) {
+                        barb.appendColumn(profile);
+                    }
                 }
             }
         }
     ]
-    readonly property Section connectionSection: Section {
+    readonly property Section connectionSection: ConnectionSection {
         title: qsTr("设备连接")
-        FieldRow {
-            label: qsTr("网卡")
-            ChoiceField {
-                Layout.fillWidth: true
-                model: internals.connectionParameters.networkInterfaceOptions
-                tips: internals.connectionParameters.networkInterfaceTips
-                value: root.networkInterfaceIndex
-                onCommitted: i => root.networkInterfaceIndex = i
+
+        label: qsTr("网卡")
+        ChoiceField {
+            Layout.fillWidth: true
+            model: internals.connectionParameters.networkInterfaceOptions
+            tips: internals.connectionParameters.networkInterfaceTips
+            value: root.networkInterfaceIndex
+            onCommitted: i => root.networkInterfaceIndex = i
+        }
+
+        firstAction: Action {
+            text: qsTr("连接")
+            onTriggered: {
+                if (internals.device.open(root.networkInterfaceIndex))
+                    root.logMessage(qsTr("连接请求已提交"));
             }
         }
-        DoubleButtonRow {
-            firstAction: Action {
-                text: qsTr("连接")
-                onTriggered: {
-                    if (internals.device.open(root.networkInterfaceIndex))
-                        root.logMessage(qsTr("连接请求已提交"))
-                }
-            }
-            secondAction: Action { text: qsTr("断开"); onTriggered: internals.device.close() }
+        secondAction: Action {
+            text: qsTr("断开")
+            onTriggered: internals.device.close()
         }
     }
     acquisitionParameters: internals.device.acquisitionParameters
@@ -91,7 +104,6 @@ ModulePage {
     // 借用公共只读资源接口，不暴露具体型号后端或缓存状态。
     readonly property var deviceState: internals.device.device
 
-
     QtObject {
         id: internals
         readonly property var chartParameters: device.chartParameters()
@@ -100,6 +112,8 @@ ModulePage {
     }
     Connections {
         target: internals.device.device
-        function onLogMessage(text): void { root.logMessage(text) }
+        function onLogMessage(text): void {
+            root.logMessage(text);
+        }
     }
 }

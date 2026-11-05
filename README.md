@@ -72,3 +72,8 @@ CI：托管 Linux 自动验证；Windows 原生依赖使用预装 SDK/运行时�
 Collector 的 onFeed 接收 optional<QByteArray> 的 const 引用，由本型号解析端取出字节。空输入由 DeviceCore 公共 feed 拦截；帧号、包序和收齐规则不变。
 
 本轮仅本地整理，不推送；集成验证见主程序维护记录。
+
+
+### 2026-11-05 公共视觉与连接布局
+
+两种型号的连接区使用 UICore ConnectionSection；型号构参、枚举、命令及日志不变。 本轮仅本地整理，未推送；Windows 集成验证记录见主程序维护操作。
