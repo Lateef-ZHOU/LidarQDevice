@@ -69,8 +69,8 @@ public:
     }
 
     explicit LidarQDevice(QObject *parent)
-        : Base(QStringLiteral("国耀采集卡"),
-               QStringLiteral("网口 · UDP · %1×%2").arg(Geometry.row).arg(Geometry.col), parent)
+        : Base(QStringLiteral("采集·国耀"),
+               QStringLiteral("%1×%2").arg(Geometry.row).arg(Geometry.col), parent)
     {
         static_assert(DeviceLifecycleLayer<LidarQDevice, decltype(&LidarQDevice::PreDestruction)>);
         this->setObjectName(QStringLiteral("LidarQ%1").arg(geo_.row));
