@@ -41,7 +41,7 @@ inline constexpr int PacketIndexOffset = 6;
 // 部署工程逐字节相同）。
 inline constexpr quint8 CmdAccumulationTime = 0x01;
 // 累积时间输入范围（型号页直读）：报文值字段是大端 quint16，故上限 65535 s；下限 1 s、默认 10 s 是界面取值。
-inline constexpr int AccumSecDefault = 10;
+inline constexpr int AccumSecDefault = 1;
 inline constexpr int AccumSecMin = 1;
 inline constexpr int AccumSecMax = 65535;
 
