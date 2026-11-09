@@ -1,10 +1,7 @@
 #pragma once
-#include "LidarQProcessing.h"
 #include <QDateTime>
 #include <QtQml/qqmlregistration.h>
 #include "DAQChartSpecification.h"
-#include "AcqSaver.h"
-#include "VerticalWindProfile.h"
 #include <memory>
 #include <QByteArray>
 #include <QString>
@@ -16,63 +13,29 @@
 #include "LidarQRunSide.h"    // 运行侧：帧头布局 + 规格预设 + 收集器
 
 // 国耀两种规格共用模板流程；Qt 属性与信号由非模板末端类声明。
-// 规格贯穿 Collector、处理工厂和设备类型，任务侧继续使用 DAQDeviceBase 组合。
-// Qt 元对象末端：Handle 与 Device 共用一个 QObject；析构先等上传退出。
-class LidarQ450x200Core final : public Device<PcapHandle, LidarQCollector<LidarQGeometry::Geo450x200>>
+// 末端同时是 Handle、Device 与采集卡族，唯一 QObject 来自 PcapHandle；处理、落盘与风廓线由族层完成。
+template <LidarQGeometry Geometry>
+class LidarQDevice : public DAQDevice<PcapHandle, LidarQCollector<Geometry>>
 {
-    Q_OBJECT
-    Q_PROPERTY(QString displayName MEMBER displayName CONSTANT)
-    Q_PROPERTY(QString subtitle MEMBER subtitle CONSTANT)
-    Q_PROPERTY(bool isOpen READ isOpen)
-    Q_PROPERTY(QVariant holder READ qmlHolder)
-public:
-    using Device::Device;
-    ~LidarQ450x200Core() override { PreDestruction(); }
-Q_SIGNALS:
-    void lockChanged(HandleCore::ResourcePhase phase) override;
-private:
-    void PreDestruction() noexcept final { Device::PreDestruction(); }
-};
-
-// Qt 元对象末端：Handle 与 Device 共用一个 QObject；析构先等上传退出。
-class LidarQ640x128Core final : public Device<PcapHandle, LidarQCollector<LidarQGeometry::Geo640x128>>
-{
-    Q_OBJECT
-    Q_PROPERTY(QString displayName MEMBER displayName CONSTANT)
-    Q_PROPERTY(QString subtitle MEMBER subtitle CONSTANT)
-    Q_PROPERTY(bool isOpen READ isOpen)
-    Q_PROPERTY(QVariant holder READ qmlHolder)
-public:
-    using Device::Device;
-    ~LidarQ640x128Core() override { PreDestruction(); }
-Q_SIGNALS:
-    void lockChanged(HandleCore::ResourcePhase phase) override;
-private:
-    void PreDestruction() noexcept final { Device::PreDestruction(); }
-};
-
-template <LidarQGeometry Geometry, typename Core>
-class LidarQDevice : public DAQDevice<Core>
-{
-    using Base = DAQDevice<Core>;
+    using Base = DAQDevice<PcapHandle, LidarQCollector<Geometry>>;
 public:
     [[nodiscard]] QVariantMap connectionParameters() const
     {
         return PcapForm::connectionParameters();
     }
-    bool open(const int interfaceIndex)
+    bool openInterface(const int interfaceIndex)
     {
-        const auto params = PcapForm::parseParameters(this->device(), interfaceIndex,
+        const auto params = PcapForm::parseParameters(*this, interfaceIndex,
             LidarQConfig::HostIPv4, LidarQConfig::HostPort, LidarQConfig::DeviceIPv4, LidarQConfig::DevicePort,
             LidarQConfig::DeviceMAC, Base::kPcapReadTimeout, Base::kPcapKernelBufferBytes);
-        return params && this->device().open(*params);
+        // 末端的 open 槽按名遮住 Handle::open；连接参数交给 Handle 本身。
+        return params && PcapHandle::open(*params);
     }
 
     explicit LidarQDevice(QObject *parent)
         : Base(QStringLiteral("采集·国耀"),
                QStringLiteral("%1×%2").arg(Geometry.row).arg(Geometry.col), parent)
     {
-        static_assert(DeviceLifecycleLayer<LidarQDevice, decltype(&LidarQDevice::PreDestruction)>);
         this->setObjectName(QStringLiteral("LidarQ%1").arg(geo_.row));
     }
 
@@ -91,63 +54,58 @@ public:
     { return {{"accumMin", LidarQConfig::AccumSecMin}, {"accumMax", LidarQConfig::AccumSecMax},
               {"accumDefault", LidarQConfig::AccumSecDefault}, {"saveDirDefault", QUrl::fromLocalFile(QDir::currentPath())}}; }
 
-protected:
-
-    void PreDestruction() noexcept override { Base::PreDestruction(); }
-
-// 参数下发共用实现；末端同名槽负责 Qt 元对象接入。
-public:
     // 空闲时单独下发累积时间（空令牌：空闲时过，被任务锁着则拒绝）。
     bool sendParams(const int accumSec)
     {
-        return this->device().send({LidarQConfig::accumulationCommand(accumSec)}, {});
+        return this->send({LidarQConfig::accumulationCommand(accumSec)}, {});
+    }
+    void startNamedTest(const int accumSec, const bool save, const QUrl &folder)
+    {
+        Base::startTest(accumSec, save, folder, AcqSaver::sessionDir(
+            QDateTime::currentDateTime(), this->objectName() + QStringLiteral("Test")));
     }
 
 private:
     static constexpr LidarQGeometry geo_ = Geometry;
-
 };
 
 class LidarQ450x200Device final
 #ifdef Q_MOC_RUN
-    : public DAQDeviceBase // 模板层继承的族级元对象。
+    : public PcapHandle // 元对象基类：唯一 QObject 来自 Handle，模板层不加 Q_OBJECT。
 #else
-    : public LidarQDevice<LidarQGeometry::Geo450x200, LidarQ450x200Core>
+    : public LidarQDevice<LidarQGeometry::Geo450x200>
 #endif
 {
     Q_OBJECT
+    Q_PROPERTY(QString displayName MEMBER displayName CONSTANT)
+    Q_PROPERTY(QString subtitle MEMBER subtitle CONSTANT)
+    Q_PROPERTY(bool isOpen READ isOpen)
+    Q_PROPERTY(QVariant holder READ qmlHolder)
     Q_PROPERTY(QVariantMap connectionParameters READ connectionParameters CONSTANT)
     QML_ELEMENT
     QML_ATTACHED(LidarQ450x200Device)
     QML_UNCREATABLE("由对应 QML 官邸创建和拥有")
     Q_PROPERTY(QVariantMap acquisitionParameters READ acquisitionParameters CONSTANT)
-    using Base = LidarQDevice<LidarQGeometry::Geo450x200, LidarQ450x200Core>;
+    using Base = LidarQDevice<LidarQGeometry::Geo450x200>;
 public:
     static LidarQ450x200Device *qmlAttachedProperties(QObject *owner) { return new LidarQ450x200Device(owner); }
-    explicit LidarQ450x200Device(QObject *parent)
-        : Base(parent)
-    {
-        this->startProcessing();
-    }
+    explicit LidarQ450x200Device(QObject *parent) : Base(parent) {}
     ~LidarQ450x200Device() override { PreDestruction(); }
     Q_INVOKABLE [[nodiscard]] QVariantMap chartParameters() const { return Base::chartParameters(); }
+// 族信号按通道下标；本卡只有 0 = CDL。
 Q_SIGNALS:
-    void specReady(const QVector<double> &values);
-    void wsReady(const QVector<double> &values);
-    void cnrReady(const QVector<double> &values);
-    void profileReady(VerticalWindProfilePtr profile);
+    void lockChanged(HandleCore::ResourcePhase phase) override;
+    void spectrumReady(int channel, const QVector<double> &values) override;
+    void radialReady(int channel, const QVector<double> &ranges, const QVector<double> &speeds,
+                     const QVector<double> &cnr, bool calibrated) override;
+    void profileReady(int channel, NonuniformVerticalWindProfilePtr profile) override;
 public Q_SLOTS:
-    bool open(const int interfaceIndex) { return Base::open(interfaceIndex); }
-    void close() { this->device().close(); }
+    bool open(const int interfaceIndex) { return openInterface(interfaceIndex); }
+    void close() { PcapHandle::close(); }
     bool sendParams(const int accumSec) { return Base::sendParams(accumSec); }
-    void startTest(const int accumSec, const bool save, const QUrl &folder)
-    {
-        Base::startTest(accumSec, save, folder, AcqSaver::sessionDir(
-            QDateTime::currentDateTime(), this->objectName() + QStringLiteral("Test")));
-    }
+    void startTest(const int accumSec, const bool save, const QUrl &folder) { startNamedTest(accumSec, save, folder); }
     void cancelTest() noexcept { Base::cancelTest(); }
 private:
-    void run() override { this->consumeFrames(makeLidarQProcessor<LidarQGeometry::Geo450x200>(this)); }
     void PreDestruction() noexcept final
     {
         static_assert(FinalDevice<LidarQ450x200Device, decltype(&LidarQ450x200Device::PreDestruction)>);
@@ -157,44 +115,41 @@ private:
 
 class LidarQ640x128Device final
 #ifdef Q_MOC_RUN
-    : public DAQDeviceBase // 模板层继承的族级元对象。
+    : public PcapHandle // 元对象基类：唯一 QObject 来自 Handle，模板层不加 Q_OBJECT。
 #else
-    : public LidarQDevice<LidarQGeometry::Geo640x128, LidarQ640x128Core>
+    : public LidarQDevice<LidarQGeometry::Geo640x128>
 #endif
 {
     Q_OBJECT
+    Q_PROPERTY(QString displayName MEMBER displayName CONSTANT)
+    Q_PROPERTY(QString subtitle MEMBER subtitle CONSTANT)
+    Q_PROPERTY(bool isOpen READ isOpen)
+    Q_PROPERTY(QVariant holder READ qmlHolder)
     Q_PROPERTY(QVariantMap connectionParameters READ connectionParameters CONSTANT)
     QML_ELEMENT
     QML_ATTACHED(LidarQ640x128Device)
     QML_UNCREATABLE("由对应 QML 官邸创建和拥有")
     Q_PROPERTY(QVariantMap acquisitionParameters READ acquisitionParameters CONSTANT)
-    using Base = LidarQDevice<LidarQGeometry::Geo640x128, LidarQ640x128Core>;
+    using Base = LidarQDevice<LidarQGeometry::Geo640x128>;
 public:
     static LidarQ640x128Device *qmlAttachedProperties(QObject *owner) { return new LidarQ640x128Device(owner); }
-    explicit LidarQ640x128Device(QObject *parent)
-        : Base(parent)
-    {
-        this->startProcessing();
-    }
+    explicit LidarQ640x128Device(QObject *parent) : Base(parent) {}
     ~LidarQ640x128Device() override { PreDestruction(); }
     Q_INVOKABLE [[nodiscard]] QVariantMap chartParameters() const { return Base::chartParameters(); }
+// 族信号按通道下标；本卡只有 0 = CDL。
 Q_SIGNALS:
-    void specReady(const QVector<double> &values);
-    void wsReady(const QVector<double> &values);
-    void cnrReady(const QVector<double> &values);
-    void profileReady(VerticalWindProfilePtr profile);
+    void lockChanged(HandleCore::ResourcePhase phase) override;
+    void spectrumReady(int channel, const QVector<double> &values) override;
+    void radialReady(int channel, const QVector<double> &ranges, const QVector<double> &speeds,
+                     const QVector<double> &cnr, bool calibrated) override;
+    void profileReady(int channel, NonuniformVerticalWindProfilePtr profile) override;
 public Q_SLOTS:
-    bool open(const int interfaceIndex) { return Base::open(interfaceIndex); }
-    void close() { this->device().close(); }
+    bool open(const int interfaceIndex) { return openInterface(interfaceIndex); }
+    void close() { PcapHandle::close(); }
     bool sendParams(const int accumSec) { return Base::sendParams(accumSec); }
-    void startTest(const int accumSec, const bool save, const QUrl &folder)
-    {
-        Base::startTest(accumSec, save, folder, AcqSaver::sessionDir(
-            QDateTime::currentDateTime(), this->objectName() + QStringLiteral("Test")));
-    }
+    void startTest(const int accumSec, const bool save, const QUrl &folder) { startNamedTest(accumSec, save, folder); }
     void cancelTest() noexcept { Base::cancelTest(); }
 private:
-    void run() override { this->consumeFrames(makeLidarQProcessor<LidarQGeometry::Geo640x128>(this)); }
     void PreDestruction() noexcept final
     {
         static_assert(FinalDevice<LidarQ640x128Device, decltype(&LidarQ640x128Device::PreDestruction)>);

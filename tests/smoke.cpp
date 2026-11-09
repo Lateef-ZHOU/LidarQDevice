@@ -7,6 +7,7 @@
 #include <memory>
 #include <QPointer>
 #include "DeviceBase.h"
+#include "DAQDevice.h"
 Q_IMPORT_QML_PLUGIN(LidarUIPlugin)
 Q_IMPORT_QML_PLUGIN(LidarChartsPlugin)
 Q_IMPORT_QML_PLUGIN(LidarTaskUIPlugin)
@@ -35,6 +36,8 @@ int main(int argc, char **argv)
             }
         }
         if (backends != 1 || backend->parent() != page.get()) return 5;
+        // 设备与采集卡族是同一个对象：family 即后端本身，可交叉转换到纯 C++ 族基。
+        if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQDeviceBase *>(backend)) return 7;
         const QPointer<QObject> lifetime(backend);
         app.processEvents();
         page.reset();
@@ -58,6 +61,8 @@ int main(int argc, char **argv)
             }
         }
         if (backends != 1 || backend->parent() != page.get()) return 5;
+        // 设备与采集卡族是同一个对象：family 即后端本身，可交叉转换到纯 C++ 族基。
+        if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQDeviceBase *>(backend)) return 7;
         const QPointer<QObject> lifetime(backend);
         app.processEvents();
         page.reset();

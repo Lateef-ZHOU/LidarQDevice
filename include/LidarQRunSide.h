@@ -101,14 +101,8 @@ struct LidarQGeometry
     // 现算不存：派生量只有一份账，改行/列/包长不会有第二处忘记同步。
     [[nodiscard]] constexpr int packetsPerFrame() const noexcept { return bytesPerFFT() / bytesPerPacket(); }
 
-    // ── 物理/显示派生量（现算不存，同上：换 Freq2WsSlope / DBinDist 只改常量店一处）──
-    // 零多普勒落在**中心 bin**——这是任何 FFT 多普勒谱的结构事实，不是待测常数，故截距由
-    // 斜率推出（形制承自 HfnlConfig::homFreq2WsIntercept）。遂占位期
-    // 只有斜率一个数是假的，真斜率一到，截距与量程自动跟对。
-    [[nodiscard]] constexpr double freq2WsIntercept() const noexcept
-    {
-        return -col * LidarQConfig::Freq2WsSlope / 2.0;
-    }
+    // ── 显示派生量（现算不存，同上：换 Freq2WsSlope / DBinDist 只改常量店一处）──
+    // 零多普勒落在中心 bin（FFT 多普勒谱的结构事实），通道规格据此给零风速参考。
     // 风速显示量程：谱只有 col 个 bin，风速必落在 ±(col/2·slope) 内——量程随斜率自适应，
     // 不硬编 ±60（国实卡那两个数是真斜率下的物理范围，占位期照抄会把整条曲线画到框外）。
     [[nodiscard]] constexpr double wsAbsMax() const noexcept
@@ -151,25 +145,10 @@ public:
         return std::shared_ptr<const LidarQCollector>(new const LidarQCollector(accumSec, std::move(context)));
     }
 
-    [[nodiscard]] const QVector<double> &constFrame() const
-    {
-        static const QVector<double> empty;
-        return settled() ? frame_ : empty;
-    }
-
-    // 本斗的数据**此刻齐不齐**：计数收满即齐。
-    // **本卡是"为什么问状态而不是履历"的现成反例**：新帧来了 `onFeed` 只清计数**不清缓冲**
-    // （正常通路上那趟 fill 是纯浪费）。于是万一计数真回退而新包正在落位，`frame_` 就是新旧混合的
-    // 一帧；此时若拿"盖过章"当判据，它仍会喊"齐了"，worker 读到的是**撕裂的一帧**。按计数判则
-    // 老老实实说"没齐"，数据到不了 worker。**两种判据的失效方向是反的**：状态谓词偏保守，履历
-    // 标记偏危险。
-    // （今天两者恒一致——判齐当场 CAS 摘桩，此后不再进料，缓冲遂被冻住。但那是靠外部不变量
-    //  兜着，而按状态判连这条都不必倚赖。）
-    [[nodiscard]] bool settled() const override { return count_ == geo_.packetsPerFrame(); }
-
     // 可变点：吃一口料。长度 / 魔数 / 包序任一不合规即丢弃、继续收。帧号变了（含首包：
     // frameId_ 出生态为空，天然判"变了"）即**弃旧启新**：计数归零，本帧从头收起；缓冲不清——
-    // 理由与代价见类注。**齐没齐由 settled() 答，本口不答**（皮会再问一次）。
+    // 理由与代价见类注。计数在本帧内收满即 complete：族基按标准方法处理后判齐，此后不再进料，
+    // 缓冲随之冻住，换帧回退计数不会把撕裂的一帧交出去。
 private: // NVI 可变点：派生只实现、不调用（公开的是基类那张非虚的皮 feed）
     void onFeed(const std::optional<QByteArray> &item, const RxTime at) override
     {
@@ -199,12 +178,13 @@ private: // NVI 可变点：派生只实现、不调用（公开的是基类那�
         if (packetIndex == 1)
             frameTime_ = at;
         constexpr int elementsPerPacket = geo_.bytesPerPacket() / static_cast<int>(sizeof(quint16));
-        double *const out = frame_.data() + (packetIndex - 1) * elementsPerPacket;
+        double *const out = front().spectrum.data() + (packetIndex - 1) * elementsPerPacket;
         const char *const payload = raw.constData() + LidarQConfig::HeaderSize;
         // 载荷保持主机序 quint16；按未对齐地址读取，不依赖 QByteArray 视图的起始地址。
         for (int i = 0; i < elementsPerPacket; ++i)
             out[i] = qFromUnaligned<quint16>(payload + i * sizeof(quint16));
-        ++count_;
+        if (++count_ == geo_.packetsPerFrame())
+            complete();
     }
 
 public: // 恢复：本口之后仍是收集器的公开面
@@ -212,7 +192,7 @@ public: // 恢复：本口之后仍是收集器的公开面
     // ── 指示区：命令 / 时限 / 造下一只（[主]，纯函数纪律）──
     // 每次 run 先下发本次累积时间；常发流仍按 FrameID 收齐一帧，无新增启动/停止协议。
     [[nodiscard]] QList<QByteArray> buildStart() const override
-    { return {LidarQConfig::accumulationCommand(accumSec_)}; }
+    { return {LidarQConfig::accumulationCommand(accumSec())}; }
     // buildStop 不覆写（走基类默认的空表）：本卡无中止协议，同 Hfnl。
     // 常发流不设看门狗：参数下发不是重启一帧的命令，未知帧率下按猜测时限换斗可能反复丢弃在收帧。
     // 参数发送失败由 Device 拒收；成功提交后等收满、取消或断联。
@@ -220,26 +200,40 @@ public: // 恢复：本口之后仍是收集器的公开面
     // 同参数、独立且已分配的初始收集区；只读取原对象的不可变配置。
     [[nodiscard]] std::shared_ptr<LidarQCollector> makeSelf() const
     {
-        auto next = std::shared_ptr<LidarQCollector>(new LidarQCollector(accumSec_, context()));
-        next->frame_.resize(geo_.row * geo_.col);
+        auto next = std::shared_ptr<LidarQCollector>(new LidarQCollector(accumSec(), context()));
+        next->front().spectrum.resize(geo_.row * geo_.col);
         return next;
     }
 
 private:
     explicit LidarQCollector(const int accumSec, DAQContext context)
-        : DAQCollector(std::move(context)), accumSec_(std::clamp(accumSec, LidarQConfig::AccumSecMin, LidarQConfig::AccumSecMax))
+        : DAQCollector(std::move(context), std::clamp(accumSec, LidarQConfig::AccumSecMin, LidarQConfig::AccumSecMax),
+                       {channel()})
     {
         static_assert(Geometry.row > 0 && Geometry.col > 0 && Geometry.bytesPerPacket() > 0);
         static_assert(Geometry.bytesPerPacket() % sizeof(quint16) == 0);
         static_assert(Geometry.bytesPerFFT() % Geometry.bytesPerPacket() == 0);
     }
 
-    const int accumSec_;
+    // 单路 CDL。换算常量仍是占位（见 LidarQConfig）：频点 i 记作 i MHz、系数 Freq2WsSlope m/s/MHz，
+    // 零多普勒在中心频点；真值回填后只改常量。
+    static DAQChannel channel()
+    {
+        DAQChannel c;
+        c.name = QStringLiteral("CDL");
+        c.rows = Geometry.row;
+        c.columns = Geometry.col;
+        for (int gate = 0; gate < Geometry.row; ++gate) c.rangeM.append(gate * LidarQConfig::DBinDist);
+        for (int bin = 0; bin < Geometry.col; ++bin) c.freqMHz.append(bin);
+        c.zeroWindMHz = Geometry.col / 2.0;
+        c.metersPerSecondPerMHz = LidarQConfig::Freq2WsSlope;
+        return c;
+    }
+
     static constexpr LidarQGeometry geo_ = Geometry; // 规格进入类型，运行中不再保存一份
 
     // ── 收集区（[仅收包线程] 可写）──
     std::optional<quint16> frameId_; // 当前正在收的帧号；空 = 还没见过任何帧
-    QVector<double> frame_;
     int count_ = 0;                  // 已收分片数（不设位图，重复包会虚高，见类注）
 };
 
