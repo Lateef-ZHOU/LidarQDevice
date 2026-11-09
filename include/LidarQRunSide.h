@@ -64,7 +64,7 @@ inline constexpr int AccumSecMax = 65535;
 // **两张采集卡的参数词汇只有同一个量：累积时间**，而实现方式各不相同——
 //   · 国实卡：卡上叫"雷达曝光时长"，**本该编进启动命令**（功能预留，卡未实现）；
 //   · 国耀卡：走本店这条独立的 0xAA 报文，与启动无关（本卡常发流，压根没有"启动"）。
-// 同一个量、两种通路：collectorFor(accumSec, context) 创建收集器；国耀的累积时间由 Collector::buildStart 随每次请求下发。
+// 同一个量、两种通路：DAQParameters{accumSec, context} 交族口 begin 创建收集器；国耀的累积时间由 Collector::buildStart 随每次请求下发。
 
 // ── 物理换算（频率 bin → 风速、距离门 → 距离）────────────────────────────────
 // **两条都是占位**（用户定：先按 1 写，把代码打通，实测 / 问到再回填）。参考工程
@@ -133,16 +133,17 @@ inline constexpr LidarQGeometry LidarQGeometry::Geo640x128{.row = 640, .col = 12
 // **换帧不清缓冲**：正常通路上"计数收满"即"每个分片位置都被本帧写过"，那一趟 fill 白跑。
 // 代价是把无位图这一注**押得更实**：重复包凑满计数时，没收到的那片读到的不是确定的 0（一眼
 // 可辨的空带），而是上一帧同位置的谱值——像真数据的陈旧数据，更难当场看出。运行缓冲在 makeSelf 中整帧
-// 零填一次，故首帧之前不存在未初始化内存。
+// 零填一次（见 create），故首帧之前不存在未初始化内存。
 template <LidarQGeometry Geometry>
 class LidarQCollector final : public DAQCollector
 {
 public:
-    // 原型只保存配置，不分配整帧数组；运行实例由 makeSelf 创建。
-    [[nodiscard]] static std::shared_ptr<const LidarQCollector> createPrototype(
-        const int accumSec = LidarQConfig::AccumSecDefault, DAQContext context = {})
+    // 族模板层按请求参数造完整实例；整帧缓冲在此零填一次，首帧之前不存在未初始化内存。
+    [[nodiscard]] static std::shared_ptr<LidarQCollector> create(const DAQParameters &parameters)
     {
-        return std::shared_ptr<const LidarQCollector>(new const LidarQCollector(accumSec, std::move(context)));
+        auto next = std::shared_ptr<LidarQCollector>(new LidarQCollector(parameters.accumSec, parameters.context));
+        next->front().spectrum.resize(geo_.row * geo_.col);
+        return next;
     }
 
     // 可变点：吃一口料。长度 / 魔数 / 包序任一不合规即丢弃、继续收。帧号变了（含首包：
@@ -198,12 +199,7 @@ public: // 恢复：本口之后仍是收集器的公开面
     // 参数发送失败由 Device 拒收；成功提交后等收满、取消或断联。
     [[nodiscard]] int timeoutMs() const override { return NoWatchdogMs; }
     // 同参数、独立且已分配的初始收集区；只读取原对象的不可变配置。
-    [[nodiscard]] std::shared_ptr<LidarQCollector> makeSelf() const
-    {
-        auto next = std::shared_ptr<LidarQCollector>(new LidarQCollector(accumSec(), context()));
-        next->front().spectrum.resize(geo_.row * geo_.col);
-        return next;
-    }
+    [[nodiscard]] std::shared_ptr<LidarQCollector> makeSelf() const { return create({accumSec(), context()}); }
 
 private:
     explicit LidarQCollector(const int accumSec, DAQContext context)
