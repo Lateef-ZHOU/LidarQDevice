@@ -218,11 +218,8 @@ private:
     {
         DAQChannel c;
         c.name = QStringLiteral("CDL");
-        c.rows = Geometry.row;
-        c.columns = Geometry.col;
-        c.radialWind = c.cnr = LinearArray<double>(LidarQConfig::RangeStartM, LidarQConfig::DBinDist);
-        c.freqStartMHz = 0.0;
-        c.freqStepMHz = LidarQConfig::BinMHz;
+        c.spectrum = LinearArray2D<double>(Geometry.row, Geometry.col, LidarQConfig::RangeStartM, LidarQConfig::DBinDist,
+                                           0.0, LidarQConfig::BinMHz);
         c.zeroWindMHz = Geometry.col / 2.0;
         return c;
     }

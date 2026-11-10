@@ -1,5 +1,7 @@
 # LidarQDevice
 
+2026-11-10 用户定（二维线性数组）：通道规格给出功率谱网格；频率轴仍为占位（起点 0、间隔 1 MHz），按用户定照标“频率 (MHz)”。
+
 2026-11-10 用户定（波长与抽稀）：`WavelengthM = 1.55 μm`（用户定）交族基；频点间隔 `BinMHz = 1` 仍是占位，显示量程的 `Freq2WsSlope` 由 λ/2 × BinMHz 派生，风速数值随之由 1.0 变为 0.775 m/s/bin。
 
 2026-11-10 用户定（线性数组）：通道规格以 `radialWind = cnr = LinearArray<double>(起点, 门距)` 给出距离轴；`radialReady` 发线性数组，页面原样交给径向风图。

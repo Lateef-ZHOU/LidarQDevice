@@ -57,7 +57,8 @@ public:
     [[nodiscard]] QVariantMap chartParameters() const
     {
         const auto plotConfiguration = DAQChartSpecification::make(
-            geo_.row, geo_.col, LidarQConfig::RangeStartM, LidarQConfig::DBinDist,
+            LinearArray2D<double>(geo_.row, geo_.col, LidarQConfig::RangeStartM, LidarQConfig::DBinDist, 0.0,
+                                  LidarQConfig::BinMHz),
             -static_cast<int>(geo_.wsAbsMax()), static_cast<int>(geo_.wsAbsMax()), LidarQConfig::Plt3dValMax);
         return {{"plotConfiguration", plotConfiguration}};
     }
@@ -107,7 +108,7 @@ public:
 // 族信号按通道下标；本卡只有 0 = CDL。
 Q_SIGNALS:
     void lockChanged(HandleCore::ResourcePhase phase) override;
-    void spectrumReady(int channel, const QVector<double> &values) override;
+    void spectrumReady(int channel, const LinearArray2D<double> &spectrum) override;
     void radialReady(int channel, const LinearArray<double> &speeds, const LinearArray<double> &cnr, bool calibrated) override;
     void profileReady(int channel, VerticalWindProfilePtr profile) override;
 public Q_SLOTS:
@@ -150,7 +151,7 @@ public:
 // 族信号按通道下标；本卡只有 0 = CDL。
 Q_SIGNALS:
     void lockChanged(HandleCore::ResourcePhase phase) override;
-    void spectrumReady(int channel, const QVector<double> &values) override;
+    void spectrumReady(int channel, const LinearArray2D<double> &spectrum) override;
     void radialReady(int channel, const LinearArray<double> &speeds, const LinearArray<double> &cnr, bool calibrated) override;
     void profileReady(int channel, VerticalWindProfilePtr profile) override;
 public Q_SLOTS:
