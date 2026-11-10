@@ -141,7 +141,7 @@ public:
     // 族模板层按请求参数造完整实例；整帧缓冲在此零填一次，首帧之前不存在未初始化内存。
     [[nodiscard]] static std::shared_ptr<LidarQCollector> create(const DAQParameters &parameters)
     {
-        auto next = std::shared_ptr<LidarQCollector>(new LidarQCollector(parameters.accumSec, parameters.context));
+        auto next = std::shared_ptr<LidarQCollector>(new LidarQCollector(parameters));
         next->front().spectrum.resize(geo_.row * geo_.col);
         return next;
     }
@@ -193,17 +193,17 @@ public: // 恢复：本口之后仍是收集器的公开面
     // ── 指示区：命令 / 时限 / 造下一只（[主]，纯函数纪律）──
     // 每次 run 先下发本次累积时间；常发流仍按 FrameID 收齐一帧，无新增启动/停止协议。
     [[nodiscard]] QList<QByteArray> buildStart() const override
-    { return {LidarQConfig::accumulationCommand(accumSec())}; }
+    { return {LidarQConfig::accumulationCommand(parameters().accumSec)}; }
     // buildStop 不覆写（走基类默认的空表）：本卡无中止协议，同 Hfnl。
     // 常发流不设看门狗：参数下发不是重启一帧的命令，未知帧率下按猜测时限换斗可能反复丢弃在收帧。
     // 参数发送失败由 Device 拒收；成功提交后等收满、取消或断联。
     [[nodiscard]] int timeoutMs() const override { return NoWatchdogMs; }
     // 同参数、独立且已分配的初始收集区；只读取原对象的不可变配置。
-    [[nodiscard]] std::shared_ptr<LidarQCollector> makeSelf() const { return create({accumSec(), context()}); }
+    [[nodiscard]] std::shared_ptr<LidarQCollector> makeSelf() const { return create(parameters()); }
 
 private:
-    explicit LidarQCollector(const int accumSec, DAQContext context)
-        : DAQCollector(std::move(context), std::clamp(accumSec, LidarQConfig::AccumSecMin, LidarQConfig::AccumSecMax),
+    explicit LidarQCollector(DAQParameters parameters)
+        : DAQCollector(std::move(parameters),
                        {channel()})
     {
         static_assert(Geometry.row > 0 && Geometry.col > 0 && Geometry.bytesPerPacket() > 0);

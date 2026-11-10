@@ -41,6 +41,18 @@ public:
 
     ~LidarQDevice() override = default;
 
+    // 型号判据：累积时间须在 国耀卡 的范围内，越界记录原因并返回空；不造 Collector、不发令。
+    [[nodiscard]] std::optional<DAQParameters> paramsFor(int accumSec, std::optional<WorldModel> pose,
+        std::optional<QDir> saveRoot, QString sessionDir, bool sync) const override
+    {
+        if (accumSec < LidarQConfig::AccumSecMin || accumSec > LidarQConfig::AccumSecMax)
+        {
+            Q_EMIT this->logMessage(QStringLiteral("累积时间 %1 秒超出本型号范围（%2~%3 秒），未启动")
+                                        .arg(accumSec).arg(LidarQConfig::AccumSecMin).arg(LidarQConfig::AccumSecMax));
+            return std::nullopt;
+        }
+        return DAQParameters{accumSec, std::move(pose), std::move(saveRoot), std::move(sessionDir), sync};
+    }
     // 型号模板共用参数生成；两个末端各自提供 Qt 元对象入口。
     [[nodiscard]] QVariantMap chartParameters() const
     {
