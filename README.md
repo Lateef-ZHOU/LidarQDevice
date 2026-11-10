@@ -1,5 +1,7 @@
 # LidarQDevice
 
+2026-11-10 用户定（线性数组）：通道规格以 `radialWind = cnr = LinearArray<double>(起点, 门距)` 给出距离轴；`radialReady` 发线性数组，页面原样交给径向风图。
+
 2026-11-10 用户定：通道规格改为起点 + 步长（第 0 门在 0 m），`radialReady` 不带斜距、`profileReady` 发均匀风廓线；页面统一用 `Wind2DView`（配置含 `rangeStart`）与 `WindBarbItem`。页面测试补充族信号经页面交给图窗不出 QML 类型警告的检查。同时修正 2026-11-09 DAQ 第一步引入的回归：族层当时发非均匀风廓线，本页均匀 `WindBarbItem` 收不进（风羽图无数据）；通道斜距也由原 (k+1)·门距 变成 k·门距。现按用户定统一为第 0 门在 0 m。
 
 2026-11-09 用户定（DAQ 第二步）：Collector 的 createPrototype（只读原型）改为 `create(const DAQParameters&)`，按请求参数造完整实例并备齐收集区；makeSelf 只供看门狗重试，复用 create。

@@ -220,8 +220,7 @@ private:
         c.name = QStringLiteral("CDL");
         c.rows = Geometry.row;
         c.columns = Geometry.col;
-        c.rangeStartM = LidarQConfig::RangeStartM;
-        c.rangeStepM = LidarQConfig::DBinDist;
+        c.radialWind = c.cnr = LinearArray<double>(LidarQConfig::RangeStartM, LidarQConfig::DBinDist);
         c.freqStartMHz = 0.0;
         c.freqStepMHz = 1.0;
         c.zeroWindMHz = Geometry.col / 2.0;
