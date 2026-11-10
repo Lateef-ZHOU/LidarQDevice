@@ -151,23 +151,22 @@ public:
     // 理由与代价见类注。计数在本帧内收满即解析：族基构造通道（即处理）后判齐，此后不再进料，
     // 缓冲随之冻住，换帧回退计数不会把撕裂的一帧交出去。
 private: // NVI 可变点：派生只实现、不调用（公开的是基类那张非虚的皮 feed）
-    void onFeed(const std::optional<QByteArray> &item, const RxTime at) override
+    std::optional<std::vector<DAQChannel>> assemble(QByteArrayView raw, RxTime at) override
     {
-        const auto &raw = *item;
         if (raw.size() != geo_.packetSize)
-            return; // 长度不对：不认
-        if (std::memcmp(raw.constData(), LidarQConfig::HeaderSign, sizeof(LidarQConfig::HeaderSign)) != 0)
-            return; // 魔数不对：不认
-        const auto *bytes = reinterpret_cast<const uchar *>(raw.constData());
+            return std::nullopt; // 长度不对：不认
+        if (std::memcmp(raw.data(), LidarQConfig::HeaderSign, sizeof(LidarQConfig::HeaderSign)) != 0)
+            return std::nullopt; // 魔数不对：不认
+        const auto *bytes = reinterpret_cast<const uchar *>(raw.data());
         const quint16 frameId = qFromBigEndian<quint16>(bytes + LidarQConfig::FrameIdOffset);
         const quint16 packetIndex = qFromBigEndian<quint16>(bytes + LidarQConfig::PacketIndexOffset);
         if (packetIndex < 1 || packetIndex > geo_.packetsPerFrame())
-            return; // 包序越界：不认
+            return std::nullopt; // 包序越界：不认
 
         if (!frameId_ || frameId != *frameId_) // 新帧（含首包）：弃旧启新
         {
             frameId_ = frameId;
-            restart(); // **只清计数，不清缓冲**：交付的前提是计数收满，收满即每个分片位置都被
+            received_ = 0; // **只清计数，不清缓冲**：交付的前提是计数收满，收满即每个分片位置都被
                         // 本帧写过，旧值无一幸存——那一趟 fill 在正常通路上是纯浪费。
         }
         // **首包盖章**（用户定）：本卡的首包认**包序 1**，不认"缓冲空不空"——缓冲是定长且不清的
@@ -179,8 +178,14 @@ private: // NVI 可变点：派生只实现、不调用（公开的是基类那�
         if (packetIndex == 1)
             frameTime_ = at;
         // 去掉包头（不属于功率谱元素），载荷按包序放到帧内位置；凑满即解析。
-        (void)store(qsizetype(packetIndex - 1) * geo_.bytesPerPacket(),
-                    QByteArrayView(raw.constData() + LidarQConfig::HeaderSize, geo_.bytesPerPacket()));
+        std::memcpy(raw_.data() + qsizetype(packetIndex - 1) * geo_.bytesPerPacket(),
+                    raw.data() + LidarQConfig::HeaderSize, geo_.bytesPerPacket());
+        received_ += geo_.bytesPerPacket();
+        if (received_ != geo_.bytesPerFFT())
+            return std::nullopt;
+        auto channels = decode();
+        raw_ = QByteArray();
+        return channels;
     }
 
 public: // 恢复：本口之后仍是收集器的公开面
@@ -198,7 +203,7 @@ public: // 恢复：本口之后仍是收集器的公开面
 
 private:
     explicit LidarQCollector(DAQParameters parameters)
-        : DAQCollector(std::move(parameters), Geometry.bytesPerFFT(), LidarQConfig::WavelengthM)
+        : DAQCollector(std::move(parameters), LidarQConfig::WavelengthM)
     {
         static_assert(Geometry.row > 0 && Geometry.col > 0 && Geometry.bytesPerPacket() > 0);
         static_assert(Geometry.bytesPerPacket() % sizeof(quint16) == 0);
@@ -208,8 +213,9 @@ private:
     // 单路 CDL。换算常量仍是占位（见 LidarQConfig）：频点 i 记作 i MHz、系数 Freq2WsSlope m/s/MHz，
     // 零多普勒在中心频点；真值回填后只改常量。
     // 载荷保持主机序 quint16；按未对齐地址读取，不依赖 QByteArray 的起始地址。
-    std::vector<DAQChannel> decode(const QByteArray &frame) const override
+    std::vector<DAQChannel> decode() const
     {
+        const QByteArray &frame = raw_;
         LinearArray2D<double> spectrum(Geometry.row, Geometry.col, LidarQConfig::RangeStartM, LidarQConfig::DBinDist,
                                        0.0, LidarQConfig::BinMHz);
         spectrum.reserve(std::size_t(Geometry.row) * Geometry.col);
@@ -224,6 +230,8 @@ private:
 
     // ── 收集区（[仅收包线程] 可写）──
     std::optional<quint16> frameId_; // 当前正在收的帧号；空 = 还没见过任何帧
+    QByteArray raw_{geo_.bytesPerFFT(), Qt::Uninitialized}; // 本帧载荷（已去包头），按包序定位；解析后释放
+    qsizetype received_ = 0; // 已收载荷字节（不设位图，重复包会虚高，见类注）
 };
 
 using LidarQ450x200Collector = LidarQCollector<LidarQGeometry::Geo450x200>;
