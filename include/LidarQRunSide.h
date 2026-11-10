@@ -72,6 +72,7 @@ inline constexpr int AccumSecMax = 65535;
 // HfnlConfig::homFreq2WsSlope（采样率 / FFT 点数 × 波长 / 2）与 homDBinDist——本卡的对应两数需要采样率、
 // FFT 点数、激光波长、门宽才能算出。
 inline constexpr double Freq2WsSlope = 1.0; // **占位**：bin → m/s 的斜率，待实测常量回填
+inline constexpr double RangeStartM = 0.0; // 第 0 门斜距；第 k 门 = RangeStartM + k·DBinDist
 inline constexpr double DBinDist = 1.0;     // **占位**：米/距离门，待实测回填（2D 距离轴 + 风廓线高度都用它）
 
 // 两种规格共用固定网络参数；设备不回应 ARP，显式 MAC 使 Handle 直接组装 UDP。
@@ -219,8 +220,10 @@ private:
         c.name = QStringLiteral("CDL");
         c.rows = Geometry.row;
         c.columns = Geometry.col;
-        for (int gate = 0; gate < Geometry.row; ++gate) c.rangeM.append(gate * LidarQConfig::DBinDist);
-        for (int bin = 0; bin < Geometry.col; ++bin) c.freqMHz.append(bin);
+        c.rangeStartM = LidarQConfig::RangeStartM;
+        c.rangeStepM = LidarQConfig::DBinDist;
+        c.freqStartMHz = 0.0;
+        c.freqStepMHz = 1.0;
         c.zeroWindMHz = Geometry.col / 2.0;
         c.metersPerSecondPerMHz = LidarQConfig::Freq2WsSlope;
         return c;

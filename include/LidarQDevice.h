@@ -57,7 +57,7 @@ public:
     [[nodiscard]] QVariantMap chartParameters() const
     {
         const auto plotConfiguration = DAQChartSpecification::make(
-            geo_.row, geo_.col, LidarQConfig::DBinDist,
+            geo_.row, geo_.col, LidarQConfig::RangeStartM, LidarQConfig::DBinDist,
             -static_cast<int>(geo_.wsAbsMax()), static_cast<int>(geo_.wsAbsMax()), LidarQConfig::Plt3dValMax);
         return {{"plotConfiguration", plotConfiguration}};
     }
@@ -108,9 +108,8 @@ public:
 Q_SIGNALS:
     void lockChanged(HandleCore::ResourcePhase phase) override;
     void spectrumReady(int channel, const QVector<double> &values) override;
-    void radialReady(int channel, const QVector<double> &ranges, const QVector<double> &speeds,
-                     const QVector<double> &cnr, bool calibrated) override;
-    void profileReady(int channel, NonuniformVerticalWindProfilePtr profile) override;
+    void radialReady(int channel, const QVector<double> &speeds, const QVector<double> &cnr, bool calibrated) override;
+    void profileReady(int channel, VerticalWindProfilePtr profile) override;
 public Q_SLOTS:
     bool open(const int interfaceIndex) { return openInterface(interfaceIndex); }
     void close() { PcapHandle::close(); }
@@ -152,9 +151,8 @@ public:
 Q_SIGNALS:
     void lockChanged(HandleCore::ResourcePhase phase) override;
     void spectrumReady(int channel, const QVector<double> &values) override;
-    void radialReady(int channel, const QVector<double> &ranges, const QVector<double> &speeds,
-                     const QVector<double> &cnr, bool calibrated) override;
-    void profileReady(int channel, NonuniformVerticalWindProfilePtr profile) override;
+    void radialReady(int channel, const QVector<double> &speeds, const QVector<double> &cnr, bool calibrated) override;
+    void profileReady(int channel, VerticalWindProfilePtr profile) override;
 public Q_SLOTS:
     bool open(const int interfaceIndex) { return openInterface(interfaceIndex); }
     void close() { PcapHandle::close(); }

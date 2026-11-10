@@ -1,5 +1,7 @@
 # LidarQDevice
 
+2026-11-10 用户定：通道规格改为起点 + 步长（第 0 门在 0 m），`radialReady` 不带斜距、`profileReady` 发均匀风廓线；页面统一用 `Wind2DView`（配置含 `rangeStart`）与 `WindBarbItem`。页面测试补充族信号经页面交给图窗不出 QML 类型警告的检查。同时修正 2026-11-09 DAQ 第一步引入的回归：族层当时发非均匀风廓线，本页均匀 `WindBarbItem` 收不进（风羽图无数据）；通道斜距也由原 (k+1)·门距 变成 k·门距。现按用户定统一为第 0 门在 0 m。
+
 2026-11-09 用户定（DAQ 第二步）：Collector 的 createPrototype（只读原型）改为 `create(const DAQParameters&)`，按请求参数造完整实例并备齐收集区；makeSelf 只供看门狗重试，复用 create。
 
 2026-11-09 用户定：删除处理线程、中间 Core 与型号处理 lambda；末端直接继承 `DAQDevice<HandleT, CollectorT>`，唯一 QObject 来自 Handle。Collector 继承族基的通道数组，型号只给通道规格并按协议整理功率谱，收齐末包调用 complete() 由族基在收包线程做标准处理；显示、落盘（每帧一个 JSON）与风廓线由族层完成。页面改接族信号 spectrumReady/radialReady/profileReady（按通道下标），family 改为 QtObject，删除 device.device 自引用。单路 CDL；换算常量仍是占位（频点 i 记作 i MHz、系数 Freq2WsSlope、零点在中心频点，门距 DBinDist），结果与原占位一致。删除 LidarQProcessing.h 与未再使用的 freq2WsIntercept。验证：独立构建零警告，CTest 1/1。

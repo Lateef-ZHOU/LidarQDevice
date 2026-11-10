@@ -38,6 +38,12 @@ int main(int argc, char **argv)
         if (backends != 1 || backend->parent() != page.get()) return 5;
         // 设备与采集卡族是同一个对象：family 即后端本身，可交叉转换到纯 C++ 族基。
         if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQDeviceBase *>(backend)) return 7;
+        // 族信号经页面接线交给图窗；参数类型与图窗入口不符时 QML 会报警告（warned）。
+        for (int channel = 0; channel < 1; ++channel) {
+            Q_EMIT dynamic_cast<DAQDeviceBase *>(backend)->radialReady(channel, {1, 2}, {-7, -6}, true);
+            Q_EMIT dynamic_cast<DAQDeviceBase *>(backend)->profileReady(channel, std::make_shared<const VerticalWindProfileUnit>(
+                std::chrono::system_clock::now(), 0.0, 60.0, std::vector<LinAlg::Vec3>{{1, 2, 0}, {3, 4, 0}}));
+        }
         const QPointer<QObject> lifetime(backend);
         app.processEvents();
         page.reset();
@@ -63,6 +69,12 @@ int main(int argc, char **argv)
         if (backends != 1 || backend->parent() != page.get()) return 5;
         // 设备与采集卡族是同一个对象：family 即后端本身，可交叉转换到纯 C++ 族基。
         if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQDeviceBase *>(backend)) return 7;
+        // 族信号经页面接线交给图窗；参数类型与图窗入口不符时 QML 会报警告（warned）。
+        for (int channel = 0; channel < 1; ++channel) {
+            Q_EMIT dynamic_cast<DAQDeviceBase *>(backend)->radialReady(channel, {1, 2}, {-7, -6}, true);
+            Q_EMIT dynamic_cast<DAQDeviceBase *>(backend)->profileReady(channel, std::make_shared<const VerticalWindProfileUnit>(
+                std::chrono::system_clock::now(), 0.0, 60.0, std::vector<LinAlg::Vec3>{{1, 2, 0}, {3, 4, 0}}));
+        }
         const QPointer<QObject> lifetime(backend);
         app.processEvents();
         page.reset();
