@@ -64,14 +64,15 @@ inline constexpr int AccumSecMax = 65535;
 // **两张采集卡的参数词汇只有同一个量：累积时间**，而实现方式各不相同——
 //   · 国实卡：卡上叫"雷达曝光时长"，**本该编进启动命令**（功能预留，卡未实现）；
 //   · 国耀卡：走本店这条独立的 0xAA 报文，与启动无关（本卡常发流，压根没有"启动"）。
-// 同一个量、两种通路：DAQParameters{accumSec, context} 交族口 begin 创建收集器；国耀的累积时间由 Collector::buildStart 随每次请求下发。
+// 同一个量、两种通路：DAQParameters 交族口 begin 创建收集器；国耀的累积时间由 Collector::buildStart 随每次请求下发。
 
 // ── 物理换算（频率 bin → 风速、距离门 → 距离）────────────────────────────────
-// **两条都是占位**（用户定：先按 1 写，把代码打通，实测 / 问到再回填）。参考工程
-// 一个物理常量都没有——它的风速图实现是空壳，压根不算风速，故无值可抄。真值的形态看国实卡的
-// HfnlConfig::homFreq2WsSlope（采样率 / FFT 点数 × 波长 / 2）与 homDBinDist——本卡的对应两数需要采样率、
-// FFT 点数、激光波长、门宽才能算出。
-inline constexpr double Freq2WsSlope = 1.0; // **占位**：bin → m/s 的斜率，待实测常量回填
+// 频点间隔与门宽是占位（用户定：先按 1 写，把代码打通，实测 / 问到再回填）；参考工程的风速图是空壳，无值可抄。
+// 频点间隔 = 采样率 / FFT 点数，需要这两个数才能回填。激光波长按 1.55 μm（用户定，2026-11-10），频移→风速系数 λ/2
+// 由族基按波长计算。
+inline constexpr double WavelengthM = 1.55e-6; // 激光波长（m）
+inline constexpr double BinMHz = 1.0;         // **占位**：频点间隔（MHz），待采样率与 FFT 点数回填
+inline constexpr double Freq2WsSlope = RadialWind::metersPerSecondPerMHz(WavelengthM) * BinMHz; // bin → m/s（显示量程用）
 inline constexpr double RangeStartM = 0.0; // 第 0 门斜距；第 k 门 = RangeStartM + k·DBinDist
 inline constexpr double DBinDist = 1.0;     // **占位**：米/距离门，待实测回填（2D 距离轴 + 风廓线高度都用它）
 
@@ -204,8 +205,7 @@ public: // 恢复：本口之后仍是收集器的公开面
 
 private:
     explicit LidarQCollector(DAQParameters parameters)
-        : DAQCollector(std::move(parameters),
-                       {channel()})
+        : DAQCollector(std::move(parameters), {channel()}, LidarQConfig::WavelengthM)
     {
         static_assert(Geometry.row > 0 && Geometry.col > 0 && Geometry.bytesPerPacket() > 0);
         static_assert(Geometry.bytesPerPacket() % sizeof(quint16) == 0);
@@ -222,9 +222,8 @@ private:
         c.columns = Geometry.col;
         c.radialWind = c.cnr = LinearArray<double>(LidarQConfig::RangeStartM, LidarQConfig::DBinDist);
         c.freqStartMHz = 0.0;
-        c.freqStepMHz = 1.0;
+        c.freqStepMHz = LidarQConfig::BinMHz;
         c.zeroWindMHz = Geometry.col / 2.0;
-        c.metersPerSecondPerMHz = LidarQConfig::Freq2WsSlope;
         return c;
     }
 

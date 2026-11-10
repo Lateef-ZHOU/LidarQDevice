@@ -1,5 +1,7 @@
 # LidarQDevice
 
+2026-11-10 用户定（波长与抽稀）：`WavelengthM = 1.55 μm`（用户定）交族基；频点间隔 `BinMHz = 1` 仍是占位，显示量程的 `Freq2WsSlope` 由 λ/2 × BinMHz 派生，风速数值随之由 1.0 变为 0.775 m/s/bin。
+
 2026-11-10 用户定（线性数组）：通道规格以 `radialWind = cnr = LinearArray<double>(起点, 门距)` 给出距离轴；`radialReady` 发线性数组，页面原样交给径向风图。
 
 2026-11-10 用户定：通道规格改为起点 + 步长（第 0 门在 0 m），`radialReady` 不带斜距、`profileReady` 发均匀风廓线；页面统一用 `Wind2DView`（配置含 `rangeStart`）与 `WindBarbItem`。页面测试补充族信号经页面交给图窗不出 QML 类型警告的检查。同时修正 2026-11-09 DAQ 第一步引入的回归：族层当时发非均匀风廓线，本页均匀 `WindBarbItem` 收不进（风羽图无数据）；通道斜距也由原 (k+1)·门距 变成 k·门距。现按用户定统一为第 0 门在 0 m。
