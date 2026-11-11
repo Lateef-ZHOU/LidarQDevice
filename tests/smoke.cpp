@@ -37,13 +37,13 @@ int main(int argc, char **argv)
         }
         if (backends != 1 || backend->parent() != page.get()) return 5;
         // 设备与采集卡族是同一个对象：family 即后端本身，可交叉转换到纯 C++ 族基。
-        if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQDeviceBase *>(backend)) return 7;
+        if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQFamily *>(backend)) return 7;
         // 族信号经页面接线交给图窗；参数类型与图窗入口不符时 QML 会报警告（warned）。
         for (int channel = 0; channel < 1; ++channel) {
             const LinearArray<double> gates(0, 60, {1, 2});
-            Q_EMIT dynamic_cast<DAQDeviceBase *>(backend)->spectrumReady(channel, LinearArray2D<double>(2, 2, 0, 60, 0, 1, {1, 2, 3, 4}));
-            Q_EMIT dynamic_cast<DAQDeviceBase *>(backend)->radialReady(channel, gates, gates, true);
-            Q_EMIT dynamic_cast<DAQDeviceBase *>(backend)->profileReady(channel, std::make_shared<const VerticalWindProfileUnit>(
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, LinearArray2D<double>(2, 2, 0, 60, 0, 1, {1, 2, 3, 4}));
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates, true);
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, std::make_shared<const VerticalWindProfileUnit>(
                 VerticalWindProfileUnit{std::chrono::system_clock::now(), LinearArray<LinAlg::Vec3>(0.0, 60.0, {{1, 2, 0}, {3, 4, 0}})}));
         }
         const QPointer<QObject> lifetime(backend);
@@ -70,13 +70,13 @@ int main(int argc, char **argv)
         }
         if (backends != 1 || backend->parent() != page.get()) return 5;
         // 设备与采集卡族是同一个对象：family 即后端本身，可交叉转换到纯 C++ 族基。
-        if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQDeviceBase *>(backend)) return 7;
+        if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQFamily *>(backend)) return 7;
         // 族信号经页面接线交给图窗；参数类型与图窗入口不符时 QML 会报警告（warned）。
         for (int channel = 0; channel < 1; ++channel) {
             const LinearArray<double> gates(0, 60, {1, 2});
-            Q_EMIT dynamic_cast<DAQDeviceBase *>(backend)->spectrumReady(channel, LinearArray2D<double>(2, 2, 0, 60, 0, 1, {1, 2, 3, 4}));
-            Q_EMIT dynamic_cast<DAQDeviceBase *>(backend)->radialReady(channel, gates, gates, true);
-            Q_EMIT dynamic_cast<DAQDeviceBase *>(backend)->profileReady(channel, std::make_shared<const VerticalWindProfileUnit>(
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, LinearArray2D<double>(2, 2, 0, 60, 0, 1, {1, 2, 3, 4}));
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates, true);
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, std::make_shared<const VerticalWindProfileUnit>(
                 VerticalWindProfileUnit{std::chrono::system_clock::now(), LinearArray<LinAlg::Vec3>(0.0, 60.0, {{1, 2, 0}, {3, 4, 0}})}));
         }
         const QPointer<QObject> lifetime(backend);
