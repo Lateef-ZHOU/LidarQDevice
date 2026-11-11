@@ -53,6 +53,8 @@ public:
         }
         return DAQParameters(*this, accumSec, std::move(pose), std::move(saveRoot), std::move(sessionDir), sync);
     }
+    // 本卡无中止协议，同 Hfnl。
+    QList<QByteArray> stopCommands() const override { return {}; }
     // 型号模板共用参数生成；两个末端各自提供 Qt 元对象入口。
     [[nodiscard]] QVariantMap chartParameters() const
     {
