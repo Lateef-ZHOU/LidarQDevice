@@ -51,7 +51,7 @@ public:
                                         .arg(accumSec).arg(LidarQConfig::AccumSecMin).arg(LidarQConfig::AccumSecMax));
             return std::nullopt;
         }
-        return DAQParameters{accumSec, std::move(pose), std::move(saveRoot), std::move(sessionDir), sync};
+        return DAQParameters(*this, accumSec, std::move(pose), std::move(saveRoot), std::move(sessionDir), sync);
     }
     // 型号模板共用参数生成；两个末端各自提供 Qt 元对象入口。
     [[nodiscard]] QVariantMap chartParameters() const

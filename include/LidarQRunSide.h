@@ -140,10 +140,13 @@ template <LidarQGeometry Geometry>
 class LidarQCollector final : public DAQCollector
 {
 public:
-    // 族模板层按请求参数造完整实例；整帧缓冲在此零填一次，首帧之前不存在未初始化内存。
-    [[nodiscard]] static std::shared_ptr<LidarQCollector> create(const DAQParameters &parameters)
+    // 族模板层按已校验的请求参数直接构造完整实例。
+    explicit LidarQCollector(const DAQParameters &parameters)
+        : DAQCollector(parameters, LidarQConfig::WavelengthM)
     {
-        return std::shared_ptr<LidarQCollector>(new LidarQCollector(parameters));
+        static_assert(Geometry.row > 0 && Geometry.col > 0 && Geometry.bytesPerPacket() > 0);
+        static_assert(Geometry.bytesPerPacket() % sizeof(quint16) == 0);
+        static_assert(Geometry.bytesPerFFT() % Geometry.bytesPerPacket() == 0);
     }
 
     // 可变点：吃一口料。长度 / 魔数 / 包序任一不合规即丢弃、继续收。帧号变了（含首包：
@@ -199,16 +202,9 @@ public: // 恢复：本口之后仍是收集器的公开面
     // 参数发送失败由 Device 拒收；成功提交后等收满、取消或断联。
     [[nodiscard]] int timeoutMs() const override { return NoWatchdogMs; }
     // 同参数、独立且已分配的初始收集区；只读取原对象的不可变配置。
-    [[nodiscard]] std::shared_ptr<LidarQCollector> makeSelf() const { return create(parameters()); }
+    [[nodiscard]] std::shared_ptr<LidarQCollector> makeSelf() const { return std::make_shared<LidarQCollector>(parameters()); }
 
 private:
-    explicit LidarQCollector(DAQParameters parameters)
-        : DAQCollector(std::move(parameters), LidarQConfig::WavelengthM)
-    {
-        static_assert(Geometry.row > 0 && Geometry.col > 0 && Geometry.bytesPerPacket() > 0);
-        static_assert(Geometry.bytesPerPacket() % sizeof(quint16) == 0);
-        static_assert(Geometry.bytesPerFFT() % Geometry.bytesPerPacket() == 0);
-    }
 
     // 单路 CDL。换算常量仍是占位（见 LidarQConfig）：频点 i 记作 i MHz、系数 Freq2WsSlope m/s/MHz，
     // 零多普勒在中心频点；真值回填后只改常量。
