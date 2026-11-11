@@ -39,7 +39,7 @@ ModulePage {
                 specification: internals.chartParameters.plotConfiguration
                 Connections {
                     target: internals.device
-                    function onRadialReady(channel, speeds, cnr, calibrated) {
+                    function onRadialReady(channel, speeds, cnr) {
                         wind.updateWS(speeds);
                         wind.updateCNR(cnr);
                     }

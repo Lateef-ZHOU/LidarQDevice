@@ -42,7 +42,7 @@ int main(int argc, char **argv)
         for (int channel = 0; channel < 1; ++channel) {
             const LinearArray<double> gates(0, 60, {1, 2});
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, LinearArray2D<double>(2, 2, 0, 60, 0, 1, {1, 2, 3, 4}));
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates, true);
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates);
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, std::make_shared<const VerticalWindProfileUnit>(
                 VerticalWindProfileUnit{std::chrono::system_clock::now(), LinearArray<LinAlg::Vec3>(0.0, 60.0, {{1, 2, 0}, {3, 4, 0}})}));
         }
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
         for (int channel = 0; channel < 1; ++channel) {
             const LinearArray<double> gates(0, 60, {1, 2});
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, LinearArray2D<double>(2, 2, 0, 60, 0, 1, {1, 2, 3, 4}));
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates, true);
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates);
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, std::make_shared<const VerticalWindProfileUnit>(
                 VerticalWindProfileUnit{std::chrono::system_clock::now(), LinearArray<LinAlg::Vec3>(0.0, 60.0, {{1, 2, 0}, {3, 4, 0}})}));
         }
