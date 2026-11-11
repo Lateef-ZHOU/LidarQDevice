@@ -134,8 +134,8 @@ inline constexpr LidarQGeometry LidarQGeometry::Geo640x128{.row = 640, .col = 12
 // （用户定：接受）。
 // **换帧不清缓冲**：正常通路上"计数收满"即"每个分片位置都被本帧写过"，那一趟 fill 白跑。
 // 代价是把无位图这一注**押得更实**：重复包凑满计数时，没收到的那片读到的不是确定的 0（一眼
-// 可辨的空带），而是上一帧同位置的谱值——像真数据的陈旧数据，更难当场看出。运行缓冲在 makeSelf 中整帧
-// 零填一次（见 create），故首帧之前不存在未初始化内存。
+// 可辨的空带），而是上一帧同位置的谱值——像真数据的陈旧数据，更难当场看出。缓冲按整帧一次分配、不清零，
+// 首帧收齐前的空位未初始化，同样只在重复包凑满计数时才会被读到。
 template <LidarQGeometry Geometry>
 class LidarQCollector final : public DAQCollector
 {
@@ -196,13 +196,12 @@ public: // 恢复：本口之后仍是收集器的公开面
     // ── 指示区：命令 / 时限 / 造下一只（[主]，纯函数纪律）──
     // 每次 run 先下发本次累积时间；常发流仍按 FrameID 收齐一帧，无新增启动/停止协议。
     [[nodiscard]] QList<QByteArray> buildStart() const override
-    { return {LidarQConfig::accumulationCommand(parameters().accumSec)}; }
+    { return {LidarQConfig::accumulationCommand(parameters.accumSec)}; }
     // buildStop 不覆写（走基类默认的空表）：本卡无中止协议，同 Hfnl。
     // 常发流不设看门狗：参数下发不是重启一帧的命令，未知帧率下按猜测时限换斗可能反复丢弃在收帧。
     // 参数发送失败由 Device 拒收；成功提交后等收满、取消或断联。
     [[nodiscard]] int timeoutMs() const override { return NoWatchdogMs; }
     // 同参数、独立且已分配的初始收集区；只读取原对象的不可变配置。
-    [[nodiscard]] std::shared_ptr<LidarQCollector> makeSelf() const { return std::make_shared<LidarQCollector>(parameters()); }
 
 private:
 
