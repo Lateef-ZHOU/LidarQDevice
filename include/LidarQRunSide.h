@@ -148,12 +148,14 @@ struct LidarQChannelSpec
 // 可辨的空带），而是上一帧同位置的谱值——像真数据的陈旧数据，更难当场看出。缓冲按整帧一次分配、不清零，
 // 首帧收齐前的空位未初始化，同样只在重复包凑满计数时才会被读到。
 template <LidarQGeometry Geometry>
-class LidarQCollector final : public DAQCollector
+class LidarQCollector final : public TypedDAQCollector<DAQChannel<LidarQChannelSpec<Geometry>>>
 {
 public:
+    // 基类依赖模板参数，其成员类型须显式引入。
+    using Frame = typename TypedDAQCollector<DAQChannel<LidarQChannelSpec<Geometry>>>::Frame;
     // 族模板层按已校验的请求参数直接构造完整实例。
     explicit LidarQCollector(const DAQParameters &parameters)
-        : DAQCollector(parameters)
+        : TypedDAQCollector<DAQChannel<LidarQChannelSpec<Geometry>>>(parameters)
     {
         static_assert(Geometry.row > 0 && Geometry.col > 0 && Geometry.bytesPerPacket() > 0);
         static_assert(Geometry.bytesPerPacket() % sizeof(quint16) == 0);
@@ -165,7 +167,7 @@ public:
     // 理由与代价见类注。计数在本帧内收满即解析：族基构造通道（即处理）后判齐，此后不再进料，
     // 缓冲随之冻住，换帧回退计数不会把撕裂的一帧交出去。
 private: // NVI 可变点：派生只实现、不调用（公开的是基类那张非虚的皮 feed）
-    std::optional<DAQChannels> assemble(QByteArrayView raw, RxTime at) override
+    std::optional<Frame> assemble(QByteArrayView raw, RxTime at) override
     {
         if (raw.size() != geo_.packetSize)
             return std::nullopt; // 长度不对：不认
@@ -190,7 +192,7 @@ private: // NVI 可变点：派生只实现、不调用（公开的是基类那�
         // 那就取最早的那一份。**
         // 代价明码：包序 1 丢了本帧就凑不齐（已收字节凑不满），章的有无不影响任何结论。
         if (packetIndex == 1)
-            frameTime_ = at;
+            this->frameTime_ = at;
         // 去掉包头（不属于功率谱元素），载荷按包序放到帧内位置；凑满即解析。
         std::memcpy(raw_.data() + qsizetype(packetIndex - 1) * geo_.bytesPerPacket(),
                     raw.data() + LidarQConfig::HeaderSize, geo_.bytesPerPacket());
@@ -207,7 +209,7 @@ public: // 恢复：本口之后仍是收集器的公开面
     // ── 指示区：命令 / 时限 / 造下一只（[主]，纯函数纪律）──
     // 每次 run 先下发本次累积时间；常发流仍按 FrameID 收齐一帧，无新增启动/停止协议。
     [[nodiscard]] QList<QByteArray> buildStart() const override
-    { return {LidarQConfig::accumulationCommand(parameters.accumSec)}; }
+    { return {LidarQConfig::accumulationCommand(this->parameters.accumSec)}; }
     // buildStop 不覆写（走基类默认的空表）：本卡无中止协议，同 Hfnl。
     // 常发流不设看门狗：参数下发不是重启一帧的命令，未知帧率下按猜测时限换斗可能反复丢弃在收帧。
     // 参数发送失败由 Device 拒收；成功提交后等收满、取消或断联。
@@ -219,14 +221,14 @@ private:
     // 单路 CDL。换算常量仍是占位（见 LidarQConfig）：频点 i 记作 i MHz、系数 Freq2WsSlope m/s/MHz，
     // 零多普勒在中心频点；真值回填后只改常量。
     // 载荷保持主机序 quint16；按未对齐地址读取，不依赖 QByteArray 的起始地址。
-    DAQChannels decode() const
+    Frame decode() const
     {
         const QByteArray &frame = raw_;
         std::vector<double> values;
         values.reserve(std::size_t(Geometry.row) * Geometry.col);
         for (qsizetype offset = 0; offset < frame.size(); offset += qsizetype(sizeof(quint16)))
             values.push_back(qFromUnaligned<quint16>(frame.constData() + offset));
-        return {std::make_shared<TypedDAQChannel<LidarQChannelSpec<Geometry>>>(std::move(values))};
+        return {DAQChannel<LidarQChannelSpec<Geometry>>(std::move(values))};
     }
 
     static constexpr LidarQGeometry geo_ = Geometry; // 规格进入类型，运行中不再保存一份
