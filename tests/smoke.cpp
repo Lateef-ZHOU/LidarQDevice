@@ -1,3 +1,4 @@
+#include <optional>
 #include <QGuiApplication>
 #include <QQmlEngine>
 #include <QQmlComponent>
@@ -44,7 +45,7 @@ int main(int argc, char **argv)
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, LinearArray2D<double>(2, 2, 0, 60, 0, 1, {1, 2, 3, 4}));
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates);
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, std::make_shared<const VerticalWindProfileUnit>(
-                VerticalWindProfileUnit{std::chrono::system_clock::now(), LinearArray<LinAlg::Vec3>(0.0, 60.0, {{1, 2, 0}, {3, 4, 0}})}));
+                VerticalWindProfileUnit{std::chrono::system_clock::now(), LinearArray<std::optional<LinAlg::Vec3>>(0.0, 60.0, {LinAlg::Vec3{1, 2, 0}, LinAlg::Vec3{3, 4, 0}})}));
         }
         const QPointer<QObject> lifetime(backend);
         app.processEvents();
@@ -77,7 +78,7 @@ int main(int argc, char **argv)
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, LinearArray2D<double>(2, 2, 0, 60, 0, 1, {1, 2, 3, 4}));
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates);
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, std::make_shared<const VerticalWindProfileUnit>(
-                VerticalWindProfileUnit{std::chrono::system_clock::now(), LinearArray<LinAlg::Vec3>(0.0, 60.0, {{1, 2, 0}, {3, 4, 0}})}));
+                VerticalWindProfileUnit{std::chrono::system_clock::now(), LinearArray<std::optional<LinAlg::Vec3>>(0.0, 60.0, {LinAlg::Vec3{1, 2, 0}, LinAlg::Vec3{3, 4, 0}})}));
         }
         const QPointer<QObject> lifetime(backend);
         app.processEvents();
