@@ -124,6 +124,17 @@ struct LidarQGeometry
 inline constexpr LidarQGeometry LidarQGeometry::Geo450x200{.row = 450, .col = 200, .packetSize = 1208};
 inline constexpr LidarQGeometry LidarQGeometry::Geo640x128{.row = 640, .col = 128, .packetSize = 1288};
 
+// 单路 CDL 规格：零多普勒在中心频点；真值回填后只改常量。
+template <LidarQGeometry Geometry>
+struct LidarQChannelSpec
+{
+    static constexpr const char *name = "CDL";
+    static constexpr double wavelengthM = LidarQConfig::WavelengthM, zeroWindMHz = Geometry.col / 2.0;
+    static constexpr int rows = Geometry.row, columns = Geometry.col;
+    static constexpr double rangeStartM = LidarQConfig::RangeStartM, rangeStepM = LidarQConfig::DBinDist;
+    static constexpr double frequencyStartMHz = 0.0, frequencyStepMHz = LidarQConfig::BinMHz;
+};
+
 // ── LidarQCollector：一次尝试的收集器（单缓冲，以功率谱 FrameID 区分常发流中的帧）──
 // FrameID 变化就放弃未齐的旧帧并重置计数，PacketIndex 决定本帧内的位置；收满一帧即交付。
 // 参考实现用的是 Head/Middle/Tail 状态机 + 双缓冲 + 收完一帧后滞后一帧确认——那是为"设备连续
@@ -142,7 +153,7 @@ class LidarQCollector final : public DAQCollector
 public:
     // 族模板层按已校验的请求参数直接构造完整实例。
     explicit LidarQCollector(const DAQParameters &parameters)
-        : DAQCollector(parameters, LidarQConfig::WavelengthM)
+        : DAQCollector(parameters)
     {
         static_assert(Geometry.row > 0 && Geometry.col > 0 && Geometry.bytesPerPacket() > 0);
         static_assert(Geometry.bytesPerPacket() % sizeof(quint16) == 0);
@@ -154,7 +165,7 @@ public:
     // 理由与代价见类注。计数在本帧内收满即解析：族基构造通道（即处理）后判齐，此后不再进料，
     // 缓冲随之冻住，换帧回退计数不会把撕裂的一帧交出去。
 private: // NVI 可变点：派生只实现、不调用（公开的是基类那张非虚的皮 feed）
-    std::optional<std::vector<DAQChannel>> assemble(QByteArrayView raw, RxTime at) override
+    std::optional<DAQChannels> assemble(QByteArrayView raw, RxTime at) override
     {
         if (raw.size() != geo_.packetSize)
             return std::nullopt; // 长度不对：不认
@@ -208,17 +219,14 @@ private:
     // 单路 CDL。换算常量仍是占位（见 LidarQConfig）：频点 i 记作 i MHz、系数 Freq2WsSlope m/s/MHz，
     // 零多普勒在中心频点；真值回填后只改常量。
     // 载荷保持主机序 quint16；按未对齐地址读取，不依赖 QByteArray 的起始地址。
-    std::vector<DAQChannel> decode() const
+    DAQChannels decode() const
     {
         const QByteArray &frame = raw_;
-        LinearArray2D<double> spectrum(Geometry.row, Geometry.col, LidarQConfig::RangeStartM, LidarQConfig::DBinDist,
-                                       0.0, LidarQConfig::BinMHz);
-        spectrum.reserve(std::size_t(Geometry.row) * Geometry.col);
+        std::vector<double> values;
+        values.reserve(std::size_t(Geometry.row) * Geometry.col);
         for (qsizetype offset = 0; offset < frame.size(); offset += qsizetype(sizeof(quint16)))
-            spectrum.push_back(qFromUnaligned<quint16>(frame.constData() + offset));
-        std::vector<DAQChannel> channels;
-        channels.emplace_back(QStringLiteral("CDL"), std::move(spectrum), Geometry.col / 2.0, wavelengthM());
-        return channels;
+            values.push_back(qFromUnaligned<quint16>(frame.constData() + offset));
+        return {std::make_shared<TypedDAQChannel<LidarQChannelSpec<Geometry>>>(std::move(values))};
     }
 
     static constexpr LidarQGeometry geo_ = Geometry; // 规格进入类型，运行中不再保存一份
