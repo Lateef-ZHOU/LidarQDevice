@@ -240,5 +240,3 @@ private:
 
 using LidarQ450x200Collector = LidarQCollector<LidarQGeometry::Geo450x200>;
 using LidarQ640x128Collector = LidarQCollector<LidarQGeometry::Geo640x128>;
-Q_DECLARE_METATYPE(std::shared_ptr<const LidarQ450x200Collector>)
-Q_DECLARE_METATYPE(std::shared_ptr<const LidarQ640x128Collector>)
