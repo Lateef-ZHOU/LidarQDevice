@@ -1,3 +1,7 @@
+## 2026-11-14：接入 FamilyCore（用户定）
+
+依赖声明与开关改用 FamilyCore / FAMILYCORE_WITH_*，协程头由 DeviceCore 提供。当前仅本地整理，GitHub 仍为 TaskCore，旧固定提交暂不更新；联调使用 `FETCHCONTENT_SOURCE_DIR_LIDAR_FAMILYCORE` 指向相邻 FamilyCore，并覆盖配套 DeviceCore/Algorithm 等源码。Windows 主程序或 simonly 的实际消费目标构建通过，业务与数据格式不变；未推送、未更新交付包。
+
 ## 2026-11-14：删除旧风场测试依赖
 
 Windows/MSVC Release 页面目标构建与页面测试 1/1 通过。
@@ -50,7 +54,7 @@ LiDAR 的独立官邸：具体 C++ 后端、Collector/协议/处理逻辑及其 
 - QML 模块：`Lidar.LidarQ`；页面：`LidarQ450Module`, `LidarQ640Module`。
 - CMake 目标：`Lidar::LidarQDevice`；静态插件：`LidarLidarQDeviceplugin`，最终可执行文件显式 `Q_IMPORT_QML_PLUGIN(LidarLidarQDevicePlugin)`，并导入 TaskUI/UI/Charts 的静态插件。
 - 页面以 attached 对象拥有唯一具体后端，后端不能在 QML 直接创建。设备通过只读 `family` 借出族引用；任务页面只接收族列表，不依赖设备官邸。
-- 依赖由 `cmake/Dependencies.cmake` 固定到提交；可用标准 FetchContent 源码覆盖做联调。多个官邸并用时，先开启所有需要的 HandleCore/TaskCore 可选项，再配置共享库，避免已创建目标后补开模块。
+- 依赖由 `cmake/Dependencies.cmake` 固定到提交；可用标准 FetchContent 源码覆盖做联调。多个官邸并用时，先开启所有需要的 HandleCore/FamilyCore 可选项，再配置共享库，避免已创建目标后补开模块。
 - 需要 libpcap >= 1.10.0；Windows 使用 Npcap SDK 与已安装的 Npcap 运行时，Linux 使用 libpcap。驱动不随仓库分发。
 
 ## 构建与验证
@@ -118,7 +122,7 @@ Collector 的 onFeed 接收 optional<QByteArray> 的 const 引用，由本型号
 
 ## 2026-11-13：不可变墙钟风廓线（用户定）
 
-页面验证的风廓线夹具适配不可变整帧及共享消费视图；生产反演由 TaskCore 按具体通道规格构造，协议与处理行为保持。
+页面验证的风廓线夹具适配不可变整帧及共享消费视图；生产反演由 FamilyCore 按具体通道规格构造，协议与处理行为保持。
 
 本轮使用本地源码覆盖验证，尚未推送；具体集成验证见主程序维护操作。
 
