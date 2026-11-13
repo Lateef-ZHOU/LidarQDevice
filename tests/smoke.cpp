@@ -42,11 +42,10 @@ int main(int argc, char **argv)
         if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQFamily *>(backend)) return 7;
         // 族信号经页面接线交给图窗；参数类型与图窗入口不符时 QML 会报警告（warned）。
         for (int channel = 0; channel < 1; ++channel) {
-            const LinearArray<double> gates(0, 60, {1, 2});
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, LinearArray2D<double>(2, 2, 0, 60, 0, 1, {1, 2, 3, 4}));
+            const auto gates = std::make_shared<const LinearArray<double>>(0, 60, std::vector<double>{1, 2});
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, std::make_shared<const LinearArray2D<double>>(2, 2, 0, 60, 0, 1, std::vector<double>{1, 2, 3, 4}));
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates);
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, shareWindProfile(std::make_shared<const WindField::Frame>(
-                WindField::Frame{std::chrono::system_clock::now(), LinearArray<std::optional<LinAlg::Vec3>>(0.0, 60.0, {LinAlg::Vec3{1, 2, 0}, LinAlg::Vec3{3, 4, 0}})})));
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, shareWindProfile(std::make_shared<const WindField::Frame>(std::chrono::system_clock::now(), 0.0, 60.0, std::vector<std::optional<LinAlg::Vec3>>{LinAlg::Vec3{1, 2, 0}, LinAlg::Vec3{3, 4, 0}})));
         }
         const QPointer<QObject> lifetime(backend);
         app.processEvents();
@@ -75,11 +74,10 @@ int main(int argc, char **argv)
         if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQFamily *>(backend)) return 7;
         // 族信号经页面接线交给图窗；参数类型与图窗入口不符时 QML 会报警告（warned）。
         for (int channel = 0; channel < 1; ++channel) {
-            const LinearArray<double> gates(0, 60, {1, 2});
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, LinearArray2D<double>(2, 2, 0, 60, 0, 1, {1, 2, 3, 4}));
+            const auto gates = std::make_shared<const LinearArray<double>>(0, 60, std::vector<double>{1, 2});
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, std::make_shared<const LinearArray2D<double>>(2, 2, 0, 60, 0, 1, std::vector<double>{1, 2, 3, 4}));
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates);
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, shareWindProfile(std::make_shared<const WindField::Frame>(
-                WindField::Frame{std::chrono::system_clock::now(), LinearArray<std::optional<LinAlg::Vec3>>(0.0, 60.0, {LinAlg::Vec3{1, 2, 0}, LinAlg::Vec3{3, 4, 0}})})));
+            Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, shareWindProfile(std::make_shared<const WindField::Frame>(std::chrono::system_clock::now(), 0.0, 60.0, std::vector<std::optional<LinAlg::Vec3>>{LinAlg::Vec3{1, 2, 0}, LinAlg::Vec3{3, 4, 0}})));
         }
         const QPointer<QObject> lifetime(backend);
         app.processEvents();
