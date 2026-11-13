@@ -1,5 +1,7 @@
 # LidarQDevice
 
+2026-11-13：适配 Algorithm 的 RadialWindCalculation 计算命名空间，为同级 RadialWind<Spec> 静态数据类型让出名称；现有计算公式、传输与保存链路不变。
+
 2026-11-13 用户定：通道规格的距离门数量与频点数量分别命名为 `rangeGateCount`、`frequencyBinCount`，取代 `rows`、`columns`。同步规格使用方，数值与数据布局不变；通用二维传输对象和 SpectrumLike 的行列接口保持。
 
 2026-11-10 用户定（凑帧归官邸）：官邸持有去包头后的载荷缓冲、帧号与已收字节，`assemble` 换帧清计数、按包序放置载荷，凑满即换算，解析后释放缓冲。

@@ -72,7 +72,7 @@ inline constexpr int AccumSecMax = 65535;
 // 由族基按波长计算。
 inline constexpr double WavelengthM = 1.55e-6; // 激光波长（m）
 inline constexpr double BinMHz = 1.0;         // **占位**：频点间隔（MHz），待采样率与 FFT 点数回填
-inline constexpr double Freq2WsSlope = RadialWind::metersPerSecondPerMHz(WavelengthM) * BinMHz; // bin → m/s（显示量程用）
+inline constexpr double Freq2WsSlope = RadialWindCalculation::metersPerSecondPerMHz(WavelengthM) * BinMHz; // bin → m/s（显示量程用）
 inline constexpr double RangeStartM = 0.0; // 第 0 门斜距；第 k 门 = RangeStartM + k·DBinDist
 inline constexpr double DBinDist = 1.0;     // **占位**：米/距离门，待实测回填（2D 距离轴 + 风廓线高度都用它）
 
