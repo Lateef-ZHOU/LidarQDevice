@@ -9,7 +9,7 @@
 #include <memory>
 #include <QPointer>
 #include "DeviceBase.h"
-#include "DAQDevice.h"
+#include "DAQFamily/DAQDevice.h"
 Q_IMPORT_QML_PLUGIN(LidarUIPlugin)
 Q_IMPORT_QML_PLUGIN(LidarChartsPlugin)
 Q_IMPORT_QML_PLUGIN(LidarTaskUIPlugin)

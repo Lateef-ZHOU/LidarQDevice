@@ -9,7 +9,7 @@
 #include <QUrl>
 #include <QVariantMap>
 
-#include "DAQDevice.h"                  // 采集卡族两层（族基 DAQFamily + 族层 DAQDevice）
+#include "DAQFamily/DAQDevice.h"                  // 采集卡族两层（族基 DAQFamily + 族层 DAQDevice）
 #include "PcapForm.h"
 #include "LidarQRunSide.h"    // 运行侧：帧头布局 + 规格预设 + 收集器
 
