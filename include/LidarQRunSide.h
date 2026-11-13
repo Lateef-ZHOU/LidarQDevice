@@ -224,10 +224,9 @@ private:
     Frame decode() const
     {
         const QByteArray &frame = raw_;
-        std::vector<double> values;
-        values.reserve(std::size_t(Geometry.row) * Geometry.col);
+        auto values = std::make_unique<Spectrum<LidarQChannelSpec<Geometry>>>();
         for (qsizetype offset = 0; offset < frame.size(); offset += qsizetype(sizeof(quint16)))
-            values.push_back(qFromUnaligned<quint16>(frame.constData() + offset));
+            (*values)[static_cast<std::size_t>(offset) / sizeof(quint16)] = qFromUnaligned<quint16>(frame.constData() + offset);
         return {DAQChannel<LidarQChannelSpec<Geometry>>(std::move(values))};
     }
 

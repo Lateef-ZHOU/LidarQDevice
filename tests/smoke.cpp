@@ -14,9 +14,40 @@ Q_IMPORT_QML_PLUGIN(LidarUIPlugin)
 Q_IMPORT_QML_PLUGIN(LidarChartsPlugin)
 Q_IMPORT_QML_PLUGIN(LidarTaskUIPlugin)
 Q_IMPORT_QML_PLUGIN(LidarLidarQDevicePlugin)
+struct TestKey : DAQParamsKey { TestKey() {} };
+template<LidarQGeometry Geometry>
+bool verifyDecodedArray()
+{
+    LidarQCollector<Geometry> collector(DAQParameters(TestKey{}, 1, {}, {}, {}, false));
+    for (int index = 1; index <= Geometry.packetsPerFrame(); ++index) {
+        QByteArray packet(LidarQConfig::HeaderSize + Geometry.bytesPerPacket(), '\0');
+        std::memcpy(packet.data(), LidarQConfig::HeaderSign, 4);
+        qToBigEndian<quint16>(7, packet.data() + LidarQConfig::FrameIdOffset);
+        qToBigEndian<quint16>(static_cast<quint16>(index), packet.data() + LidarQConfig::PacketIndexOffset);
+        for (int offset = 0; offset < Geometry.bytesPerPacket(); offset += 2)
+            qToUnaligned<quint16>(static_cast<quint16>(index), packet.data() + LidarQConfig::HeaderSize + offset);
+        if (collector.feed(packet, {}) != (index == Geometry.packetsPerFrame())) return false;
+    }
+    const auto &spectrum = *std::get<0>(collector.channels()).spectrum;
+    for (std::size_t i = 0; i < spectrum.size(); ++i)
+        if (spectrum[i] != i * 2 / Geometry.bytesPerPacket() + 1) return false;
+    return spectrum.size() == static_cast<std::size_t>(Geometry.row) * Geometry.col;
+}
+template<class Channels, std::size_t... I>
+Channels sampleChannels(std::index_sequence<I...>)
+{
+    const auto channel = []<class C>() {
+        using S = std::remove_const_t<typename decltype(C::spectrum)::element_type>;
+        auto spectrum = std::make_unique<S>();
+        std::fill(spectrum->begin(), spectrum->end(), 1.0);
+        return C(std::move(spectrum));
+    };
+    return std::make_shared<typename Channels::element_type>(channel.template operator()<std::tuple_element_t<I, typename Channels::element_type>>()...);
+}
 int main(int argc, char **argv)
 {
     QGuiApplication app(argc, argv);
+    if (!verifyDecodedArray<LidarQGeometry::Geo450x200>() || !verifyDecodedArray<LidarQGeometry::Geo640x128>()) return 20;
     QQmlEngine engine;
     bool warned = false;
     QObject::connect(&engine, &QQmlEngine::warnings, &engine, [&](const auto &) { warned = true; });
@@ -42,9 +73,7 @@ int main(int argc, char **argv)
         if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQFamily *>(backend)) return 7;
         // 族信号经页面接线交给图窗；参数类型与图窗入口不符时 QML 会报警告（warned）。
         for (int channel = 0; channel < 1; ++channel) {
-            const auto gates = std::make_shared<const LinearArray<double>>(0, 60, std::vector<double>{1, 2});
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, std::make_shared<const LinearArray2D<double>>(2, 2, 0, 60, 0, 1, std::vector<double>{1, 2, 3, 4}));
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates);
+            Q_EMIT qobject_cast<LidarQ450x200Device *>(backend)->channelsReady(sampleChannels<LidarQ450x200Device::Channels>(std::make_index_sequence<std::tuple_size_v<typename LidarQ450x200Device::Channels::element_type>>{}));
             LidarQ450Profiles profiles;
             std::apply([&](auto &...p) {
                 ((p = std::make_shared<const std::remove_const_t<typename std::decay_t<decltype(p)>::element_type>>(
@@ -79,9 +108,7 @@ int main(int argc, char **argv)
         if (page->property("family").value<QObject *>() != backend || !dynamic_cast<DAQFamily *>(backend)) return 7;
         // 族信号经页面接线交给图窗；参数类型与图窗入口不符时 QML 会报警告（warned）。
         for (int channel = 0; channel < 1; ++channel) {
-            const auto gates = std::make_shared<const LinearArray<double>>(0, 60, std::vector<double>{1, 2});
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, std::make_shared<const LinearArray2D<double>>(2, 2, 0, 60, 0, 1, std::vector<double>{1, 2, 3, 4}));
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates);
+            Q_EMIT qobject_cast<LidarQ640x128Device *>(backend)->channelsReady(sampleChannels<LidarQ640x128Device::Channels>(std::make_index_sequence<std::tuple_size_v<typename LidarQ640x128Device::Channels::element_type>>{}));
             LidarQ640Profiles profiles;
             std::apply([&](auto &...p) {
                 ((p = std::make_shared<const std::remove_const_t<typename std::decay_t<decltype(p)>::element_type>>(

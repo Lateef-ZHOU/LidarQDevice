@@ -1,3 +1,11 @@
+## 2026-11-14：静态功率谱、径向风与 CNR（用户定）
+
+两个规格分别直接填写 Spectrum<LidarQChannelSpec<Geometry>> 的最终数组，径向风和 CNR 同样保留 Spec。channelsReady 只读共享元组经各规格 Qt 绘图入口接线；旧动态数组信号删除。帧号、包序、协议检查、元素解释、重试、四束历史和保存格式保持。
+
+本轮仅本地联调，不推送；与配套 FamilyCore、ChartCore 及官邸源码一起使用。
+
+验证：Windows/MSVC Release 构建及 CTest 1/1 通过；两种规格逐包组帧、全部数组元素位置及具体类型 QML 接口通过。证据：build-daq/static-frames*.log 与 Testing/Temporary/LastTest.log。
+
 ## 2026-11-14：接入 FamilyCore（用户定）
 
 依赖声明与开关改用 FamilyCore / FAMILYCORE_WITH_*，协程头由 DeviceCore 提供。当前仅本地整理，GitHub 仍为 TaskCore，旧固定提交暂不更新；联调使用 `FETCHCONTENT_SOURCE_DIR_LIDAR_FAMILYCORE` 指向相邻 FamilyCore，并覆盖配套 DeviceCore/Algorithm 等源码。Windows 主程序或 simonly 的实际消费目标构建通过，业务与数据格式不变；未推送、未更新交付包。

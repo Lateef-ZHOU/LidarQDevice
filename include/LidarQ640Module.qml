@@ -23,12 +23,11 @@ ModulePage {
             title: qsTr("功率谱")
             contentItem: SurfaceView {
                 id: surface
+                plot: LidarQ640Spectrum { configuration: surface.plotConfiguration }
                 specification: internals.chartParameters.plotConfiguration
                 Connections {
                     target: internals.device
-                    function onSpectrumReady(channel, values) {
-                        surface.updateSpectrum(values);
-                    }
+                    function onChannelsReady(channels) { surface.updateSpectrum(channels) }
                 }
             }
         },
@@ -36,13 +35,12 @@ ModulePage {
             title: qsTr("径向风")
             contentItem: Wind2DView {
                 id: wind
+                windPlot: LidarQ640RadialWind { configuration: wind.windConfiguration }
+                cnrPlot: LidarQ640CNR { configuration: wind.cnrConfiguration }
                 specification: internals.chartParameters.plotConfiguration
                 Connections {
                     target: internals.device
-                    function onRadialReady(channel, speeds, cnr) {
-                        wind.updateWS(speeds);
-                        wind.updateCNR(cnr);
-                    }
+                    function onChannelsReady(channels) { wind.updateWS(channels); wind.updateCNR(channels) }
                 }
             }
         },

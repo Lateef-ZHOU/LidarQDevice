@@ -1,5 +1,7 @@
 #pragma once
 #include "WindBarbItem.h"
+#include "SurfaceItem.h"
+#include "Wind2DItem.h"
 #include <QDateTime>
 #include <QtQml/qqmlregistration.h>
 #include "DAQChartSpecification.h"
@@ -15,6 +17,12 @@
 
 // Qt 只登记具体结果元组；各项仍指向算法生成的原帧。
 using LidarQ640Profiles = DAQDevice<PcapHandle, LidarQCollector<LidarQGeometry::Geo640x128>>::Profiles;
+using LidarQ640Channels = DAQDevice<PcapHandle, LidarQCollector<LidarQGeometry::Geo640x128>>::Channels;
+struct LidarQ640ChannelsQml {
+    Q_GADGET
+    QML_FOREIGN(LidarQ640Channels)
+    QML_ANONYMOUS
+};
 struct LidarQ640ProfilesQml
 {
     Q_GADGET
@@ -24,6 +32,12 @@ struct LidarQ640ProfilesQml
 
 // Qt 只登记具体结果元组；各项仍指向算法生成的原帧。
 using LidarQ450Profiles = DAQDevice<PcapHandle, LidarQCollector<LidarQGeometry::Geo450x200>>::Profiles;
+using LidarQ450Channels = DAQDevice<PcapHandle, LidarQCollector<LidarQGeometry::Geo450x200>>::Channels;
+struct LidarQ450ChannelsQml {
+    Q_GADGET
+    QML_FOREIGN(LidarQ450Channels)
+    QML_ANONYMOUS
+};
 struct LidarQ450ProfilesQml
 {
     Q_GADGET
@@ -77,9 +91,7 @@ public:
     // 型号模板共用参数生成；两个末端各自提供 Qt 元对象入口。
     [[nodiscard]] QVariantMap chartParameters() const
     {
-        const auto plotConfiguration = DAQChartSpecification::make(
-            LinearArray2D<double>(geo_.row, geo_.col, LidarQConfig::RangeStartM, LidarQConfig::DBinDist, 0.0,
-                                  LidarQConfig::BinMHz),
+        const auto plotConfiguration = DAQChartSpecification::make<LidarQChannelSpec<Geometry>>(
             -static_cast<int>(geo_.wsAbsMax()), static_cast<int>(geo_.wsAbsMax()), LidarQConfig::Plt3dValMax);
         return {{"plotConfiguration", plotConfiguration}};
     }
@@ -129,8 +141,7 @@ public:
 // 族信号按通道下标；本卡只有 0 = CDL。
 Q_SIGNALS:
     void lockChanged(HandleCore::ResourcePhase phase) override;
-    void spectrumReady(int channel, const LinearSpectrumPtr &spectrum) override;
-    void radialReady(int channel, const LinearSeriesPtr &speeds, const LinearSeriesPtr &cnr) override;
+    void channelsReady(const LidarQ450Channels &channels) override;
     void profilesReady(const LidarQ450Profiles &profiles) override;
 public Q_SLOTS:
     bool open(const int interfaceIndex) { return openInterface(interfaceIndex); }
@@ -172,8 +183,7 @@ public:
 // 族信号按通道下标；本卡只有 0 = CDL。
 Q_SIGNALS:
     void lockChanged(HandleCore::ResourcePhase phase) override;
-    void spectrumReady(int channel, const LinearSpectrumPtr &spectrum) override;
-    void radialReady(int channel, const LinearSeriesPtr &speeds, const LinearSeriesPtr &cnr) override;
+    void channelsReady(const LidarQ640Channels &channels) override;
     void profilesReady(const LidarQ640Profiles &profiles) override;
 public Q_SLOTS:
     bool open(const int interfaceIndex) { return openInterface(interfaceIndex); }
@@ -219,4 +229,88 @@ public:
     explicit LidarQ640WindBarb(QQuickItem *parent = nullptr) : WindBarbItem(parent) {}
     Q_INVOKABLE void appendProfiles(const LidarQ640Profiles &profiles)
     { appendColumn(std::get<0>(profiles)); }
+};
+
+// 仅适配 Qt 元对象；类型与只读份额直达绘图数值入口。
+class LidarQ450Spectrum : public SurfaceItem
+{
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    explicit LidarQ450Spectrum(QQuickItem *parent = nullptr) : SurfaceItem(parent) {}
+    Q_INVOKABLE bool setData(const LidarQ450Channels &channels, double low, double high)
+    {
+        if (!channels) return false;
+        return setSpectrum(std::get<0>(*channels).spectrum, low, high);
+    }
+};
+
+// 仅适配 Qt 元对象；类型与只读份额直达绘图数值入口。
+class LidarQ450RadialWind : public Wind2DItem
+{
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    explicit LidarQ450RadialWind(QQuickItem *parent = nullptr) : Wind2DItem(parent) {}
+    Q_INVOKABLE void setData(const LidarQ450Channels &channels)
+    {
+        if (!channels) return;
+        setRadialWind(std::get<0>(*channels).radialWind);
+    }
+};
+
+// 仅适配 Qt 元对象；类型与只读份额直达绘图数值入口。
+class LidarQ450CNR : public Wind2DItem
+{
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    explicit LidarQ450CNR(QQuickItem *parent = nullptr) : Wind2DItem(parent) {}
+    Q_INVOKABLE void setData(const LidarQ450Channels &channels)
+    {
+        if (!channels) return;
+        setCNR(std::get<0>(*channels).cnr);
+    }
+};
+
+// 仅适配 Qt 元对象；类型与只读份额直达绘图数值入口。
+class LidarQ640Spectrum : public SurfaceItem
+{
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    explicit LidarQ640Spectrum(QQuickItem *parent = nullptr) : SurfaceItem(parent) {}
+    Q_INVOKABLE bool setData(const LidarQ640Channels &channels, double low, double high)
+    {
+        if (!channels) return false;
+        return setSpectrum(std::get<0>(*channels).spectrum, low, high);
+    }
+};
+
+// 仅适配 Qt 元对象；类型与只读份额直达绘图数值入口。
+class LidarQ640RadialWind : public Wind2DItem
+{
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    explicit LidarQ640RadialWind(QQuickItem *parent = nullptr) : Wind2DItem(parent) {}
+    Q_INVOKABLE void setData(const LidarQ640Channels &channels)
+    {
+        if (!channels) return;
+        setRadialWind(std::get<0>(*channels).radialWind);
+    }
+};
+
+// 仅适配 Qt 元对象；类型与只读份额直达绘图数值入口。
+class LidarQ640CNR : public Wind2DItem
+{
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    explicit LidarQ640CNR(QQuickItem *parent = nullptr) : Wind2DItem(parent) {}
+    Q_INVOKABLE void setData(const LidarQ640Channels &channels)
+    {
+        if (!channels) return;
+        setCNR(std::get<0>(*channels).cnr);
+    }
 };
