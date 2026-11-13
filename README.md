@@ -1,3 +1,7 @@
+## 2026-11-14 风廓线原帧直接传输（用户定）
+
+450、640 两规格的 profilesReady 分别携带具体 VerticalWindProfileUnit 的只读份额元组；各自风羽图保存原帧。Qt 类型登记和末端入口留在本仓库，不增加数据包装。四束、算法与保存格式保持。Windows/MSVC Release 构建及两规格页面测试 1/1 通过。 本轮不推送。
+
 # LidarQDevice
 
 2026-11-13：适配 Algorithm 的 RadialWindCalculation 计算命名空间，为同级 RadialWind<Spec> 静态数据类型让出名称；现有计算公式、传输与保存链路不变。

@@ -48,7 +48,7 @@ ModulePage {
         },
         Page {
             title: qsTr("风廓线")
-            contentItem: WindBarbItem {
+            contentItem: LidarQ450WindBarb {
                 id: barb
                 readonly property var spec: internals.chartParameters.plotConfiguration
                 configuration: ({
@@ -59,9 +59,7 @@ ModulePage {
                     })
                 Connections {
                     target: internals.device
-                    function onProfileReady(channel, profile) {
-                        barb.appendColumn(profile);
-                    }
+                    function onProfilesReady(profiles) { barb.appendProfiles(profiles) }
                 }
             }
         }

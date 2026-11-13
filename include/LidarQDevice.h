@@ -1,4 +1,5 @@
 #pragma once
+#include "WindBarbItem.h"
 #include <QDateTime>
 #include <QtQml/qqmlregistration.h>
 #include "DAQChartSpecification.h"
@@ -11,6 +12,24 @@
 #include "DAQDevice.h"                  // 采集卡族两层（族基 DAQFamily + 族层 DAQDevice）
 #include "PcapForm.h"
 #include "LidarQRunSide.h"    // 运行侧：帧头布局 + 规格预设 + 收集器
+
+// Qt 只登记具体结果元组；各项仍指向算法生成的原帧。
+using LidarQ640Profiles = DAQDevice<PcapHandle, LidarQCollector<LidarQGeometry::Geo640x128>>::Profiles;
+struct LidarQ640ProfilesQml
+{
+    Q_GADGET
+    QML_FOREIGN(LidarQ640Profiles)
+    QML_ANONYMOUS
+};
+
+// Qt 只登记具体结果元组；各项仍指向算法生成的原帧。
+using LidarQ450Profiles = DAQDevice<PcapHandle, LidarQCollector<LidarQGeometry::Geo450x200>>::Profiles;
+struct LidarQ450ProfilesQml
+{
+    Q_GADGET
+    QML_FOREIGN(LidarQ450Profiles)
+    QML_ANONYMOUS
+};
 
 // 国耀两种规格共用模板流程；Qt 属性与信号由非模板末端类声明。
 // 末端同时是 Handle、Device 与采集卡族，唯一 QObject 来自 PcapHandle；处理、落盘与风廓线由族层完成。
@@ -112,7 +131,7 @@ Q_SIGNALS:
     void lockChanged(HandleCore::ResourcePhase phase) override;
     void spectrumReady(int channel, const LinearSpectrumPtr &spectrum) override;
     void radialReady(int channel, const LinearSeriesPtr &speeds, const LinearSeriesPtr &cnr) override;
-    void profileReady(int channel, VerticalWindProfilePtr profile) override;
+    void profilesReady(const LidarQ450Profiles &profiles) override;
 public Q_SLOTS:
     bool open(const int interfaceIndex) { return openInterface(interfaceIndex); }
     void close() { PcapHandle::close(); }
@@ -155,7 +174,7 @@ Q_SIGNALS:
     void lockChanged(HandleCore::ResourcePhase phase) override;
     void spectrumReady(int channel, const LinearSpectrumPtr &spectrum) override;
     void radialReady(int channel, const LinearSeriesPtr &speeds, const LinearSeriesPtr &cnr) override;
-    void profileReady(int channel, VerticalWindProfilePtr profile) override;
+    void profilesReady(const LidarQ640Profiles &profiles) override;
 public Q_SLOTS:
     bool open(const int interfaceIndex) { return openInterface(interfaceIndex); }
     void close() { PcapHandle::close(); }
@@ -168,4 +187,36 @@ private:
         static_assert(FinalDevice<LidarQ640x128Device, decltype(&LidarQ640x128Device::PreDestruction)>);
         Base::PreDestruction();
     }
+};
+
+// 末端仅提供 Qt 入口；历史和绘制由 ChartCore 的模板实现。
+class LidarQ450WindBarb
+#ifdef Q_MOC_RUN
+    : public WindBarbChart
+#else
+    : public WindBarbItem<typename std::tuple_element_t<0, LidarQ450Profiles>::element_type>
+#endif
+{
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    explicit LidarQ450WindBarb(QQuickItem *parent = nullptr) : WindBarbItem(parent) {}
+    Q_INVOKABLE void appendProfiles(const LidarQ450Profiles &profiles)
+    { appendColumn(std::get<0>(profiles)); }
+};
+
+// 末端仅提供 Qt 入口；历史和绘制由 ChartCore 的模板实现。
+class LidarQ640WindBarb
+#ifdef Q_MOC_RUN
+    : public WindBarbChart
+#else
+    : public WindBarbItem<typename std::tuple_element_t<0, LidarQ640Profiles>::element_type>
+#endif
+{
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    explicit LidarQ640WindBarb(QQuickItem *parent = nullptr) : WindBarbItem(parent) {}
+    Q_INVOKABLE void appendProfiles(const LidarQ640Profiles &profiles)
+    { appendColumn(std::get<0>(profiles)); }
 };

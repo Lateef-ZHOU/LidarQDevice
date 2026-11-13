@@ -1,3 +1,4 @@
+#include "LidarQDevice.h"
 #include "WindField.h"
 #include <optional>
 #include <QGuiApplication>
@@ -45,7 +46,12 @@ int main(int argc, char **argv)
             const auto gates = std::make_shared<const LinearArray<double>>(0, 60, std::vector<double>{1, 2});
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, std::make_shared<const LinearArray2D<double>>(2, 2, 0, 60, 0, 1, std::vector<double>{1, 2, 3, 4}));
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates);
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, shareWindProfile(std::make_shared<const WindField::Frame>(std::chrono::system_clock::now(), 0.0, 60.0, std::vector<std::optional<LinAlg::Vec3>>{LinAlg::Vec3{1, 2, 0}, LinAlg::Vec3{3, 4, 0}})));
+            LidarQ450Profiles profiles;
+            std::apply([&](auto &...p) {
+                ((p = std::make_shared<const std::remove_const_t<typename std::decay_t<decltype(p)>::element_type>>(
+                    std::chrono::system_clock::now(), 30.0)), ...);
+            }, profiles);
+            Q_EMIT qobject_cast<LidarQ450x200Device *>(backend)->profilesReady(profiles);
         }
         const QPointer<QObject> lifetime(backend);
         app.processEvents();
@@ -77,7 +83,12 @@ int main(int argc, char **argv)
             const auto gates = std::make_shared<const LinearArray<double>>(0, 60, std::vector<double>{1, 2});
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->spectrumReady(channel, std::make_shared<const LinearArray2D<double>>(2, 2, 0, 60, 0, 1, std::vector<double>{1, 2, 3, 4}));
             Q_EMIT dynamic_cast<DAQFamily *>(backend)->radialReady(channel, gates, gates);
-            Q_EMIT dynamic_cast<DAQFamily *>(backend)->profileReady(channel, shareWindProfile(std::make_shared<const WindField::Frame>(std::chrono::system_clock::now(), 0.0, 60.0, std::vector<std::optional<LinAlg::Vec3>>{LinAlg::Vec3{1, 2, 0}, LinAlg::Vec3{3, 4, 0}})));
+            LidarQ640Profiles profiles;
+            std::apply([&](auto &...p) {
+                ((p = std::make_shared<const std::remove_const_t<typename std::decay_t<decltype(p)>::element_type>>(
+                    std::chrono::system_clock::now(), 30.0)), ...);
+            }, profiles);
+            Q_EMIT qobject_cast<LidarQ640x128Device *>(backend)->profilesReady(profiles);
         }
         const QPointer<QObject> lifetime(backend);
         app.processEvents();
