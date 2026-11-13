@@ -130,7 +130,7 @@ struct LidarQChannelSpec
 {
     static constexpr const char *name = "CDL";
     static constexpr double wavelengthM = LidarQConfig::WavelengthM, zeroWindMHz = Geometry.col / 2.0;
-    static constexpr int rows = Geometry.row, columns = Geometry.col;
+    static constexpr int rangeGateCount = Geometry.row, frequencyBinCount = Geometry.col;
     static constexpr double rangeStartM = LidarQConfig::RangeStartM, rangeStepM = LidarQConfig::DBinDist;
     static constexpr double frequencyStartMHz = 0.0, frequencyStepMHz = LidarQConfig::BinMHz;
 };
