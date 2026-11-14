@@ -1,4 +1,5 @@
 #pragma once
+#include <format>
 #include "WindBarbItem.h"
 #include "SurfaceItem.h"
 #include "Wind2DItem.h"
@@ -80,8 +81,7 @@ public:
     {
         if (accumSec < LidarQConfig::AccumSecMin || accumSec > LidarQConfig::AccumSecMax)
         {
-            Q_EMIT this->logMessage(QStringLiteral("累积时间 %1 秒超出本型号范围（%2~%3 秒），未启动")
-                                        .arg(accumSec).arg(LidarQConfig::AccumSecMin).arg(LidarQConfig::AccumSecMax));
+            Q_EMIT this->logMessage(std::format("累积时间 {} 秒超出本型号范围（{}~{} 秒），未启动", accumSec, LidarQConfig::AccumSecMin, LidarQConfig::AccumSecMax));
             return std::nullopt;
         }
         return DAQParameters(*this, accumSec, std::move(pose), std::move(saveRoot), std::move(sessionDir), sync);
