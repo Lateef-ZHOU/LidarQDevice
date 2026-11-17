@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <format>
 #include "WindBarbItem.h"
 #include "SurfaceItem.h"
@@ -67,8 +68,8 @@ public:
     }
 
     explicit LidarQDevice(QObject *parent)
-        : Base(QStringLiteral("采集·国耀"),
-               QStringLiteral("%1×%2").arg(Geometry.row).arg(Geometry.col), parent)
+        : Base("采集·国耀",
+               std::format("{}×{}", Geometry.row, Geometry.col), parent)
     {
         this->setObjectName(QStringLiteral("LidarQ%1").arg(geo_.row));
     }
@@ -123,8 +124,8 @@ class LidarQ450x200Device final
 #endif
 {
     Q_OBJECT
-    Q_PROPERTY(QString displayName MEMBER displayName CONSTANT)
-    Q_PROPERTY(QString subtitle MEMBER subtitle CONSTANT)
+    Q_PROPERTY(std::string displayName MEMBER displayName CONSTANT)
+    Q_PROPERTY(std::string subtitle MEMBER subtitle CONSTANT)
     Q_PROPERTY(bool isOpen READ isOpen)
     Q_PROPERTY(QVariant holder READ qmlHolder)
     Q_PROPERTY(QVariantMap connectionParameters READ connectionParameters CONSTANT)
@@ -165,8 +166,8 @@ class LidarQ640x128Device final
 #endif
 {
     Q_OBJECT
-    Q_PROPERTY(QString displayName MEMBER displayName CONSTANT)
-    Q_PROPERTY(QString subtitle MEMBER subtitle CONSTANT)
+    Q_PROPERTY(std::string displayName MEMBER displayName CONSTANT)
+    Q_PROPERTY(std::string subtitle MEMBER subtitle CONSTANT)
     Q_PROPERTY(bool isOpen READ isOpen)
     Q_PROPERTY(QVariant holder READ qmlHolder)
     Q_PROPERTY(QVariantMap connectionParameters READ connectionParameters CONSTANT)
