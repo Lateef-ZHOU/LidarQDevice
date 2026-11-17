@@ -104,7 +104,8 @@ public:
     // 空闲时单独下发累积时间（空令牌：空闲时过，被任务锁着则拒绝）。
     bool sendParams(const int accumSec)
     {
-        return this->send({LidarQConfig::accumulationCommand(accumSec)}, {});
+        const auto command = LidarQConfig::accumulationCommand(accumSec);
+        return this->send({{command.cbegin(), command.cend()}}, {});
     }
     void startNamedTest(const int accumSec, const bool save, const QUrl &folder)
     {
