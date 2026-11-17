@@ -1,9 +1,9 @@
 #pragma once
+#include <vector>
 #include <algorithm>
 #include <cstring> // std::memcmp（帧头核验）
 #include <optional>
 #include <QByteArray>
-#include <QList>
 #include <QVector>
 #include <QtEndian> // qFromBigEndian（帧号/包序字段解析）
 #include <QtGlobal> // quint8/quint16（帧头字段）
@@ -208,8 +208,11 @@ public: // 恢复：本口之后仍是收集器的公开面
 
     // ── 指示区：命令 / 时限 / 造下一只（[主]，纯函数纪律）──
     // 每次 run 先下发本次累积时间；常发流仍按 FrameID 收齐一帧，无新增启动/停止协议。
-    [[nodiscard]] QList<QByteArray> buildStart() const override
-    { return {LidarQConfig::accumulationCommand(this->parameters.accumSec)}; }
+    [[nodiscard]] std::vector<std::vector<unsigned char>> buildStart() const override
+    {
+        const auto command = LidarQConfig::accumulationCommand(this->parameters.accumSec);
+        return {{command.cbegin(), command.cend()}};
+    }
     // buildStop 不覆写（走基类默认的空表）：本卡无中止协议，同 Hfnl。
     // 常发流不设看门狗：参数下发不是重启一帧的命令，未知帧率下按猜测时限换斗可能反复丢弃在收帧。
     // 参数发送失败由 Device 拒收；成功提交后等收满、取消或断联。

@@ -1,3 +1,9 @@
+## 2026-11-17：命令集合使用 vector（用户定）
+
+Collector::buildStart 和设备 stopCommands 接入 std::vector<std::vector<unsigned char>>。累积时间命令仍由原 accumulationCommand 编码，集合工厂出口转为自有字节；空停机命令、无看门狗与常发流收帧保持。
+
+不新增命令缓存或兼容包装。验证见主程序 docs/maintenance/validation.md；使用相邻源码覆盖，暂不推送。
+
 ## 2026-11-14：UTF-8 日志接口（用户定）
 
 准入固定日志使用 UTF-8 std::string，累积范围动态日志改为 std::format；通过 UICore 接入既有 QML 日志栏，不增加官邸转发。协议、规格和处理链不变。
