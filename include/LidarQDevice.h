@@ -79,7 +79,7 @@ public:
 
     // 型号判据：累积时间须在 国耀卡 的范围内，越界记录原因并返回空；不造 Collector、不发令。
     [[nodiscard]] std::optional<DAQParameters> paramsFor(int accumSec, std::optional<WorldModel> pose,
-        std::optional<QDir> saveRoot, QString sessionDir, bool sync) const override
+        std::optional<QDir> saveRoot, std::string sessionDir, bool sync) const override
     {
         if (accumSec < LidarQConfig::AccumSecMin || accumSec > LidarQConfig::AccumSecMax)
         {
