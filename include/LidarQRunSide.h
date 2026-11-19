@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cstring> // std::memcmp（帧头核验）
 #include <optional>
+#include <span>
 #include <QByteArray>
-#include <QVector>
 #include <QtEndian> // qFromBigEndian（帧号/包序字段解析）
 #include <QtGlobal> // quint8/quint16（帧头字段）
 
@@ -166,13 +166,13 @@ public:
     // 理由与代价见类注。计数在本帧内收满即解析：族基构造通道（即处理）后判齐，此后不再进料，
     // 缓冲随之冻住，换帧回退计数不会把撕裂的一帧交出去。
 private: // NVI 可变点：派生只实现、不调用（公开的是基类那张非虚的皮 feed）
-    std::optional<Frame> assemble(QByteArrayView raw, RxTime at) override
+    std::optional<Frame> assemble(std::span<const unsigned char> raw, RxTime at) override
     {
-        if (raw.size() != geo_.packetSize)
+        if (raw.size() != static_cast<std::size_t>(geo_.packetSize))
             return std::nullopt; // 长度不对：不认
         if (std::memcmp(raw.data(), LidarQConfig::HeaderSign, sizeof(LidarQConfig::HeaderSign)) != 0)
             return std::nullopt; // 魔数不对：不认
-        const auto *bytes = reinterpret_cast<const uchar *>(raw.data());
+        const auto *bytes = raw.data();
         const quint16 frameId = qFromBigEndian<quint16>(bytes + LidarQConfig::FrameIdOffset);
         const quint16 packetIndex = qFromBigEndian<quint16>(bytes + LidarQConfig::PacketIndexOffset);
         if (packetIndex < 1 || packetIndex > geo_.packetsPerFrame())

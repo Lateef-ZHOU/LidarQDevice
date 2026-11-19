@@ -1,5 +1,6 @@
 #include "LidarQDevice.h"
 #include <optional>
+#include <vector>
 #include <QGuiApplication>
 #include <QQmlEngine>
 #include <QQmlComponent>
@@ -20,7 +21,7 @@ bool verifyDecodedArray()
 {
     LidarQCollector<Geometry> collector(DAQParameters(TestKey{}, 1, {}, {}, {}, false));
     for (int index = 1; index <= Geometry.packetsPerFrame(); ++index) {
-        QByteArray packet(LidarQConfig::HeaderSize + Geometry.bytesPerPacket(), '\0');
+        std::vector<unsigned char> packet(LidarQConfig::HeaderSize + Geometry.bytesPerPacket());
         std::memcpy(packet.data(), LidarQConfig::HeaderSign, 4);
         qToBigEndian<quint16>(7, packet.data() + LidarQConfig::FrameIdOffset);
         qToBigEndian<quint16>(static_cast<quint16>(index), packet.data() + LidarQConfig::PacketIndexOffset);
