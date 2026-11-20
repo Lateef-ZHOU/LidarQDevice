@@ -137,7 +137,7 @@ using LidarQWind = LinearMapping<(0.0 - G.col / 2.0)
 template<LidarQGeometry G>
 using LidarQFrame = Grid2D<LidarQRange<G>, LidarQFrequency<G>>;
 template<LidarQGeometry G>
-using LidarQChannel = DAQChannel<LidarQRange<G>, LidarQFrequency<G>>;
+using LidarQChannel = DAQChannel<LidarQRange<G>, LidarQFrequency<G>, LidarQWind<G>>;
 
 // ── LidarQCollector：一次尝试的收集器（单缓冲，以功率谱 FrameID 区分常发流中的帧）──
 // FrameID 变化就放弃未齐的旧帧并重置计数，PacketIndex 决定本帧内的位置；收满一帧即交付。
