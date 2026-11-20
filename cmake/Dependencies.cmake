@@ -1,4 +1,4 @@
-include(FetchContent)
+﻿include(FetchContent)
 set(HANDLECORE_WITH_PCAP ON)
 if(NOT TARGET Lidar::HandleCore)
     FetchContent_Declare(lidar_handle_core
@@ -14,7 +14,7 @@ set(FAMILYCORE_WITH_PCAP_FORMS ON)
 if(NOT TARGET Lidar::TaskUI)
     FetchContent_Declare(lidar_familycore
         GIT_REPOSITORY https://github.com/Lateef-ZHOU/TaskCore.git
-        GIT_TAG 8e0b9e1781960df0d25748ef4838f5b47e763d90)
+        GIT_TAG abe45d68ef57f000e96fc8c5503959e0b707b0b8)
     FetchContent_MakeAvailable(lidar_familycore)
 endif()
 if(NOT TARGET Lidar::PcapForms)
