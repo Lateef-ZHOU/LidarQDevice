@@ -126,12 +126,12 @@ inline constexpr LidarQGeometry LidarQGeometry::Geo640x128{.row = 640, .col = 12
 
 // 单路 CDL 规格：零多普勒在中心频点；真值回填后只改常量。
 template<LidarQGeometry G>
-constexpr DAQParams lidarQParams()
+constexpr DAQParams<UniformRangeMapping<LidarQConfig::RangeStartM,
+    LidarQConfig::RangeStartM + LidarQConfig::DBinDist * G.row, G.row>> lidarQParams()
 {
     return {.wavelengthM = LidarQConfig::WavelengthM, .zeroWindMHz = G.col / 2.0,
-            .rangeStartM = LidarQConfig::RangeStartM, .rangeStepM = LidarQConfig::DBinDist,
             .frequencyStartMHz = 0.0, .frequencyStepMHz = LidarQConfig::BinMHz,
-            .rangeGateCount = G.row, .frequencyBinCount = G.col};
+            .frequencyBinCount = G.col};
 }
 
 // ── LidarQCollector：一次尝试的收集器（单缓冲，以功率谱 FrameID 区分常发流中的帧）──
