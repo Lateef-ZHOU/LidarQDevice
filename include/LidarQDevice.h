@@ -94,7 +94,7 @@ public:
     // 型号模板共用参数生成；两个末端各自提供 Qt 元对象入口。
     [[nodiscard]] QVariantMap chartParameters() const
     {
-        const auto plotConfiguration = DAQChartSpecification::make<LidarQRange<Geometry>, LidarQDoppler<Geometry>>(
+        const auto plotConfiguration = DAQChartSpecification::make<LidarQRange<Geometry>, LidarQFrequency<Geometry>>(
             -static_cast<int>(geo_.wsAbsMax()), static_cast<int>(geo_.wsAbsMax()), LidarQConfig::Plt3dValMax);
         return {{"plotConfiguration", plotConfiguration}};
     }

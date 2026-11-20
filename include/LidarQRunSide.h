@@ -128,12 +128,15 @@ inline constexpr LidarQGeometry LidarQGeometry::Geo640x128{.row = 640, .col = 12
 template<LidarQGeometry G>
 using LidarQRange = UniformMapping<LidarQConfig::RangeStartM, LidarQConfig::DBinDist, G.row>;
 template<LidarQGeometry G>
-using LidarQDoppler = DopplerMapping<UniformMapping<0.0, LidarQConfig::BinMHz, G.col>,
-    LidarQConfig::WavelengthM, G.col / 2.0>;
+using LidarQFrequency = UniformMapping<0.0, LidarQConfig::BinMHz, G.col>;
 template<LidarQGeometry G>
-using LidarQFrame = Spectrum<LidarQRange<G>, LidarQDoppler<G>>;
+using LidarQWind = UniformMapping<(0.0 - G.col / 2.0)
+    * RadialWindCalculation::metersPerSecondPerMHz(LidarQConfig::WavelengthM),
+    LidarQConfig::BinMHz * RadialWindCalculation::metersPerSecondPerMHz(LidarQConfig::WavelengthM), G.col>;
 template<LidarQGeometry G>
-using LidarQChannel = DAQChannel<LidarQRange<G>, LidarQDoppler<G>>;
+using LidarQFrame = Spectrum<LidarQRange<G>, LidarQFrequency<G>>;
+template<LidarQGeometry G>
+using LidarQChannel = DAQChannel<LidarQRange<G>, LidarQFrequency<G>>;
 
 // ── LidarQCollector：一次尝试的收集器（单缓冲，以功率谱 FrameID 区分常发流中的帧）──
 // FrameID 变化就放弃未齐的旧帧并重置计数，PacketIndex 决定本帧内的位置；收满一帧即交付。
@@ -230,7 +233,7 @@ private:
         auto values = std::make_unique<LidarQFrame<Geometry>>();
         for (qsizetype offset = 0; offset < frame.size(); offset += qsizetype(sizeof(quint16)))
             (*values)[static_cast<std::size_t>(offset) / sizeof(quint16)] = qFromUnaligned<quint16>(frame.constData() + offset);
-        return {LidarQChannel<Geometry>(std::move(values), "CDL")};
+        return {LidarQChannel<Geometry>(std::move(values), LidarQWind<Geometry>{}, "CDL")};
     }
 
     static constexpr LidarQGeometry geo_ = Geometry; // 规格进入类型，运行中不再保存一份
