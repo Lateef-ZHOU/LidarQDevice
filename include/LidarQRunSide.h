@@ -72,7 +72,7 @@ inline constexpr int AccumSecMax = 65535;
 // 由族基按波长计算。
 inline constexpr double WavelengthM = 1.55e-6; // 激光波长（m）
 inline constexpr double BinMHz = 1.0;         // **占位**：频点间隔（MHz），待采样率与 FFT 点数回填
-inline constexpr double Freq2WsSlope = RadialWindCalculation::metersPerSecondPerMHz(WavelengthM) * BinMHz; // bin → m/s（显示量程用）
+inline constexpr double Freq2WsSlope = WavelengthM / 2.0 * 1e6 * BinMHz; // bin → m/s（显示量程用）
 inline constexpr double RangeStartM = 0.0; // 第 0 门斜距；第 k 门 = RangeStartM + k·DBinDist
 inline constexpr double DBinDist = 1.0;     // **占位**：米/距离门，待实测回填（2D 距离轴 + 风廓线高度都用它）
 
@@ -127,12 +127,13 @@ inline constexpr LidarQGeometry LidarQGeometry::Geo640x128{.row = 640, .col = 12
 // 单路 CDL 规格：零多普勒在中心频点；真值回填后只改常量。
 template<LidarQGeometry G>
 using LidarQRange = UniformMapping<LidarQConfig::RangeStartM, LidarQConfig::DBinDist, G.row>;
+inline constexpr double LidarQWindMetersPerMHz = LidarQConfig::WavelengthM / 2.0 * 1e6;
 template<LidarQGeometry G>
 using LidarQFrequency = UniformMapping<0.0, LidarQConfig::BinMHz, G.col>;
 template<LidarQGeometry G>
 using LidarQWind = UniformMapping<(0.0 - G.col / 2.0)
-    * RadialWindCalculation::metersPerSecondPerMHz(LidarQConfig::WavelengthM),
-    LidarQConfig::BinMHz * RadialWindCalculation::metersPerSecondPerMHz(LidarQConfig::WavelengthM), G.col>;
+    * LidarQWindMetersPerMHz,
+    LidarQConfig::BinMHz * LidarQWindMetersPerMHz, G.col>;
 template<LidarQGeometry G>
 using LidarQFrame = Spectrum<LidarQRange<G>, LidarQFrequency<G>>;
 template<LidarQGeometry G>
