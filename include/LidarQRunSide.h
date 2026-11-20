@@ -126,13 +126,14 @@ inline constexpr LidarQGeometry LidarQGeometry::Geo640x128{.row = 640, .col = 12
 
 // 单路 CDL 规格：零多普勒在中心频点；真值回填后只改常量。
 template<LidarQGeometry G>
-constexpr DAQParams<UniformMapping<LidarQConfig::RangeStartM,
-    LidarQConfig::DBinDist, G.row>> lidarQParams()
-{
-    return {.wavelengthM = LidarQConfig::WavelengthM, .zeroWindMHz = G.col / 2.0,
-            .frequencyStartMHz = 0.0, .frequencyStepMHz = LidarQConfig::BinMHz,
-            .frequencyBinCount = G.col};
-}
+using LidarQRange = UniformMapping<LidarQConfig::RangeStartM, LidarQConfig::DBinDist, G.row>;
+template<LidarQGeometry G>
+using LidarQDoppler = DopplerMapping<UniformMapping<0.0, LidarQConfig::BinMHz, G.col>,
+    LidarQConfig::WavelengthM, G.col / 2.0>;
+template<LidarQGeometry G>
+using LidarQFrame = Spectrum<LidarQRange<G>, LidarQDoppler<G>>;
+template<LidarQGeometry G>
+using LidarQChannel = DAQChannel<LidarQRange<G>, LidarQDoppler<G>>;
 
 // ── LidarQCollector：一次尝试的收集器（单缓冲，以功率谱 FrameID 区分常发流中的帧）──
 // FrameID 变化就放弃未齐的旧帧并重置计数，PacketIndex 决定本帧内的位置；收满一帧即交付。
@@ -147,14 +148,14 @@ constexpr DAQParams<UniformMapping<LidarQConfig::RangeStartM,
 // 可辨的空带），而是上一帧同位置的谱值——像真数据的陈旧数据，更难当场看出。缓冲按整帧一次分配、不清零，
 // 首帧收齐前的空位未初始化，同样只在重复包凑满计数时才会被读到。
 template <LidarQGeometry Geometry>
-class LidarQCollector final : public TypedDAQCollector<DAQChannel<lidarQParams<Geometry>()>>
+class LidarQCollector final : public TypedDAQCollector<LidarQChannel<Geometry>>
 {
 public:
     // 基类依赖模板参数，其成员类型须显式引入。
-    using Frame = typename TypedDAQCollector<DAQChannel<lidarQParams<Geometry>()>>::Frame;
+    using Frame = typename TypedDAQCollector<LidarQChannel<Geometry>>::Frame;
     // 族模板层按已校验的请求参数直接构造完整实例。
     explicit LidarQCollector(const DAQParameters &parameters)
-        : TypedDAQCollector<DAQChannel<lidarQParams<Geometry>()>>(parameters)
+        : TypedDAQCollector<LidarQChannel<Geometry>>(parameters)
     {
         static_assert(Geometry.row > 0 && Geometry.col > 0 && Geometry.bytesPerPacket() > 0);
         static_assert(Geometry.bytesPerPacket() % sizeof(quint16) == 0);
@@ -226,10 +227,10 @@ private:
     Frame decode() const
     {
         const QByteArray &frame = raw_;
-        auto values = std::make_unique<Spectrum<lidarQParams<Geometry>()>>();
+        auto values = std::make_unique<LidarQFrame<Geometry>>();
         for (qsizetype offset = 0; offset < frame.size(); offset += qsizetype(sizeof(quint16)))
             (*values)[static_cast<std::size_t>(offset) / sizeof(quint16)] = qFromUnaligned<quint16>(frame.constData() + offset);
-        return {DAQChannel<lidarQParams<Geometry>()>(std::move(values), "CDL")};
+        return {LidarQChannel<Geometry>(std::move(values), "CDL")};
     }
 
     static constexpr LidarQGeometry geo_ = Geometry; // 规格进入类型，运行中不再保存一份
