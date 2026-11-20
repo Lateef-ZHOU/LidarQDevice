@@ -127,7 +127,7 @@ inline constexpr LidarQGeometry LidarQGeometry::Geo640x128{.row = 640, .col = 12
 // 单路 CDL 规格：零多普勒在中心频点；真值回填后只改常量。
 template<LidarQGeometry G>
 constexpr DAQParams<UniformRangeMapping<LidarQConfig::RangeStartM,
-    LidarQConfig::RangeStartM + LidarQConfig::DBinDist * G.row, G.row>> lidarQParams()
+    LidarQConfig::DBinDist, G.row>> lidarQParams()
 {
     return {.wavelengthM = LidarQConfig::WavelengthM, .zeroWindMHz = G.col / 2.0,
             .frequencyStartMHz = 0.0, .frequencyStepMHz = LidarQConfig::BinMHz,
