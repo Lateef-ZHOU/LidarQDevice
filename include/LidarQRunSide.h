@@ -126,16 +126,16 @@ inline constexpr LidarQGeometry LidarQGeometry::Geo640x128{.row = 640, .col = 12
 
 // 单路 CDL 规格：零多普勒在中心频点；真值回填后只改常量。
 template<LidarQGeometry G>
-using LidarQRange = UniformMapping<LidarQConfig::RangeStartM, LidarQConfig::DBinDist, G.row>;
+using LidarQRange = LinearMapping<LidarQConfig::RangeStartM, LidarQConfig::DBinDist, G.row>;
 inline constexpr double LidarQWindMetersPerMHz = LidarQConfig::WavelengthM / 2.0 * 1e6;
 template<LidarQGeometry G>
-using LidarQFrequency = UniformMapping<0.0, LidarQConfig::BinMHz, G.col>;
+using LidarQFrequency = LinearMapping<0.0, LidarQConfig::BinMHz, G.col>;
 template<LidarQGeometry G>
-using LidarQWind = UniformMapping<(0.0 - G.col / 2.0)
+using LidarQWind = LinearMapping<(0.0 - G.col / 2.0)
     * LidarQWindMetersPerMHz,
     LidarQConfig::BinMHz * LidarQWindMetersPerMHz, G.col>;
 template<LidarQGeometry G>
-using LidarQFrame = Spectrum<LidarQRange<G>, LidarQFrequency<G>>;
+using LidarQFrame = Grid2D<LidarQRange<G>, LidarQFrequency<G>>;
 template<LidarQGeometry G>
 using LidarQChannel = DAQChannel<LidarQRange<G>, LidarQFrequency<G>>;
 
