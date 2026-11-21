@@ -232,9 +232,22 @@ private:
     {
         const QByteArray &frame = raw_;
         auto values = std::make_unique<LidarQFrame<Geometry>>();
+        auto denoised = std::make_unique<LidarQFrame<Geometry>>();
+        std::array<double, static_cast<std::size_t>(Geometry.col)> floor{};
+        const auto columns = static_cast<std::size_t>(Geometry.col);
         for (qsizetype offset = 0; offset < frame.size(); offset += qsizetype(sizeof(quint16)))
-            (*values)[static_cast<std::size_t>(offset) / sizeof(quint16)] = qFromUnaligned<quint16>(frame.constData() + offset);
-        return {LidarQChannel<Geometry>(std::move(values), LidarQWind<Geometry>{}, "CDL")};
+        {
+            const auto i = static_cast<std::size_t>(offset) / sizeof(quint16);
+            const double value = qFromUnaligned<quint16>(frame.constData() + offset);
+            (*values)[i] = value;
+            if (i < columns)
+            {
+                floor[i] = value;
+                (*denoised)[i] = 0.0; // 本底门自身归零
+            }
+            else (*denoised)[i] = value - floor[i % columns];
+        }
+        return {LidarQChannel<Geometry>(std::move(values), std::move(denoised), LidarQWind<Geometry>{}, "CDL")};
     }
 
     static constexpr LidarQGeometry geo_ = Geometry; // 规格进入类型，运行中不再保存一份

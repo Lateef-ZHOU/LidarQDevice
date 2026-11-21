@@ -245,7 +245,7 @@ public:
     Q_INVOKABLE bool setData(const LidarQ450Channels &channels, double low, double high)
     {
         if (!channels) return false;
-        return setSpectrum(std::get<0>(*channels).spectrum, low, high);
+        return setSpectrum(std::get<0>(*channels).displaySpectrum(), low, high);
     }
 };
 
@@ -287,7 +287,7 @@ public:
     Q_INVOKABLE bool setData(const LidarQ640Channels &channels, double low, double high)
     {
         if (!channels) return false;
-        return setSpectrum(std::get<0>(*channels).spectrum, low, high);
+        return setSpectrum(std::get<0>(*channels).displaySpectrum(), low, high);
     }
 };
 
