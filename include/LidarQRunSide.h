@@ -232,16 +232,8 @@ private:
     {
         const QByteArray &frame = raw_;
         auto values = std::make_unique<LidarQFrame<Geometry>>();
-        // 本底 = 第一个距离门（镜面之前）；逐点扣除。
-        const auto columns = static_cast<std::size_t>(Geometry.col);
         for (qsizetype offset = 0; offset < frame.size(); offset += qsizetype(sizeof(quint16)))
-        {
-            const auto i = static_cast<std::size_t>(offset) / sizeof(quint16);
-            double value = qFromUnaligned<quint16>(frame.constData() + offset);
-            if (i >= columns) value -= (*values)[i % columns];
-            (*values)[i] = value;
-        }
-        for (std::size_t c = 0; c < columns; ++c) (*values)[c] = 0.0;
+            (*values)[static_cast<std::size_t>(offset) / sizeof(quint16)] = qFromUnaligned<quint16>(frame.constData() + offset);
         return {LidarQChannel<Geometry>(std::move(values), LidarQWind<Geometry>{}, "CDL")};
     }
 

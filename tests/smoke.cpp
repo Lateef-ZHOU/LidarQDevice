@@ -30,10 +30,8 @@ bool verifyDecodedArray()
         if (collector.feed(packet, {}) != (index == Geometry.packetsPerFrame())) return false;
     }
     const auto &spectrum = *std::get<0>(collector.channels()).spectrum;
-    const auto raw = [&](std::size_t i) { return static_cast<double>(i * 2 / Geometry.bytesPerPacket() + 1); };
-    const auto columns = static_cast<std::size_t>(Geometry.col);
     for (std::size_t i = 0; i < spectrum.size(); ++i)
-        if (spectrum[i] != raw(i) - raw(i % columns)) return false; // 本底 = 第一门同频点
+        if (spectrum[i] != i * 2 / Geometry.bytesPerPacket() + 1) return false;
     return spectrum.size() == static_cast<std::size_t>(Geometry.row) * Geometry.col;
 }
 template<class Channels, std::size_t... I>
